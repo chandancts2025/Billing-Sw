@@ -1,0 +1,11 @@
+.artifacts/
+**/bin/
+**/obj/
+**/.verify/
+web/billease-pro-web/node_modules/
+web/billease-pro-web/dist/
+*.user
+*.suo
+.vs/
+.vscode/
+npm-debug.log*

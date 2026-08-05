@@ -1,0 +1,278 @@
+.pos {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 16px;
+}
+
+.sale-panel,
+.cart-panel {
+  background: white;
+  border: 1px solid #dde3eb;
+  border-radius: 8px;
+}
+
+.sale-panel {
+  padding: 16px;
+}
+
+.search-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #ccd5df;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.search-row input {
+  border: 0;
+  outline: 0;
+  min-width: 0;
+  font-size: 16px;
+}
+
+.shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  align-items: center;
+  margin: 14px 0;
+  color: #657386;
+  font-size: 13px;
+}
+
+kbd {
+  padding: 2px 6px;
+  border: 1px solid #b8c3cf;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: #f8fafc;
+  color: #1f2937;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.product-grid button {
+  min-height: 86px;
+  display: grid;
+  align-content: space-between;
+  text-align: left;
+  border: 1px solid #dbe2ea;
+  background: #fbfcfe;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.product-grid button:hover {
+  border-color: #2aa198;
+}
+
+.cart-panel {
+  display: grid;
+  grid-template-rows: auto minmax(240px, 1fr) auto auto;
+  min-height: calc(100vh - 104px);
+}
+
+.cart-head,
+.line,
+.totals,
+.cart-actions {
+  padding: 14px;
+}
+
+.cart-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5eaf0;
+}
+
+.cart-head div {
+  display: grid;
+}
+
+.cart-head span,
+.line span {
+  color: #657386;
+  font-size: 13px;
+}
+
+.cart-lines {
+  overflow: auto;
+}
+
+.line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 74px;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid #edf1f5;
+}
+
+.line strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.qty {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  align-items: center;
+  border: 1px solid #d9e0e8;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.qty button {
+  border: 0;
+  background: #f2f5f8;
+  height: 30px;
+}
+
+.qty span {
+  text-align: center;
+}
+
+.empty {
+  margin: 20px;
+  color: #657386;
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  border-top: 1px solid #e5eaf0;
+}
+
+.grand {
+  font-size: 22px;
+}
+
+.cart-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.print-bill {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .pos {
+    grid-template-columns: 1fr;
+  }
+
+  .cart-panel {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 620px) {
+  .pos {
+    padding: 12px;
+  }
+
+  .search-row,
+  .line,
+  .cart-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #print-bill,
+  #print-bill * {
+    visibility: visible;
+  }
+
+  #print-bill {
+    display: block;
+    position: fixed;
+    inset: 0 auto auto 0;
+    padding: 12mm;
+    font-family: Arial, sans-serif;
+    color: #000;
+    background: #fff;
+  }
+
+  #print-bill header {
+    text-align: center;
+    border-bottom: 1px solid #000;
+    margin-bottom: 8px;
+  }
+
+  #print-bill h2,
+  #print-bill p {
+    margin: 0 0 4px;
+  }
+
+  #print-bill table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  #print-bill th,
+  #print-bill td {
+    padding: 4px 2px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+  }
+
+  #print-bill th:last-child,
+  #print-bill td:last-child {
+    text-align: right;
+  }
+
+  #print-bill footer div {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+  }
+
+  #print-bill.thermal-58 {
+    width: 58mm;
+    padding: 3mm;
+  }
+
+  #print-bill.thermal-80 {
+    width: 80mm;
+    padding: 4mm;
+  }
+
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  #print-bill.thermal-58 {
+    page: thermal58;
+  }
+
+  #print-bill.thermal-80 {
+    page: thermal80;
+  }
+
+  @page thermal58 {
+    size: 58mm auto;
+    margin: 0;
+  }
+
+  @page thermal80 {
+    size: 80mm auto;
+    margin: 0;
+  }
+}
