@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, roleGuard } from './core/guards/auth.guard';
+import { settingsUnsavedGuard } from './features/settings/settings-unsaved.guard';
 
 export const routes: Routes = [
   { path: 'login', redirectTo: 'auth/login' },
@@ -50,7 +51,7 @@ export const routes: Routes = [
       { path: 'reports/analytics', canActivate: [roleGuard], data: { role: 'Admin' }, loadComponent: () => import('./features/reports/reports-workspace.component').then(m => m.ReportsWorkspaceComponent) },
       { path: 'reports/dashboard', canActivate: [roleGuard], data: { role: 'Admin' }, loadComponent: () => import('./features/reports/reports-workspace.component').then(m => m.ReportsWorkspaceComponent) },
       { path: 'settings', pathMatch: 'full', redirectTo: 'settings/shop' },
-      { path: 'settings/:section', canActivate: [roleGuard], data: { role: 'Admin' }, loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent) }
+      { path: 'settings/:section', canActivate: [roleGuard], canDeactivate: [settingsUnsavedGuard], data: { role: 'Admin' }, loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent) }
     ]
   },
   { path: '**', redirectTo: '' }
