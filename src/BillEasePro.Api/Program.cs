@@ -127,9 +127,18 @@ if (!app.Environment.IsDevelopment())
 
 app.Use(async (context, next) =>
 {
-    // Provide a stricter CSP in production; relax for development to allow local dev tooling (webpack/ng serve, BrowserLink, LiveReload, etc.)
     string csp;
-    if (app.Environment.IsDevelopment())
+    if (context.Request.Path.StartsWithSegments("/swagger"))
+    {
+        // Swagger UI requires inline scripts, inline styles, and data: URIs for icons
+        csp = "default-src 'self'; " +
+              "script-src 'self' 'unsafe-inline'; " +
+              "style-src 'self' 'unsafe-inline'; " +
+              "img-src 'self' data:; " +
+              "connect-src 'self' https: http:; " +
+              "frame-ancestors 'none'; object-src 'none'; base-uri 'self';";
+    }
+    else if (app.Environment.IsDevelopment())
     {
         // Allow inline styles/scripts and dev servers/websockets used during development
         csp = "default-src 'self' http://localhost:4200; " +
@@ -141,7 +150,12 @@ app.Use(async (context, next) =>
     }
     else
     {
-        csp = "default-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self';";
+        csp = "default-src 'self'; " +
+              "script-src 'self' 'unsafe-inline'; " +
+              "style-src 'self' 'unsafe-inline'; " +
+              "img-src 'self' data: blob:; " +
+              "connect-src 'self' https: http:; " +
+              "frame-ancestors 'none'; object-src 'none'; base-uri 'self';";
     }
 
     context.Response.Headers.Remove("Content-Security-Policy");
