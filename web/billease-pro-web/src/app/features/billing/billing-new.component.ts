@@ -1116,6 +1116,26 @@ interface BillLine {
           </div>
         </div>
       }
+
+      <!-- STICKY MOBILE CHECKOUT DOCK (VISIBLE ON MOBILE/TABLET <= 860px) -->
+      @if (lines().length > 0) {
+        <aside class="mobile-sticky-checkout">
+          <div class="m-checkout-info">
+            <span class="m-total-label">TOTAL ({{ lines().length }} items, {{ totalItemQuantity() }} units)</span>
+            <strong class="m-total-val">₹{{ currentGrandTotal() }}</strong>
+          </div>
+          <div class="m-checkout-actions">
+            <button type="button" class="btn-m-pay" (click)="promptConfirm(true, true)" title="Pay and Print (F6)">
+              <mat-icon>print</mat-icon>
+              <span>Pay & Print</span>
+            </button>
+            <button type="button" class="btn-m-confirm" (click)="promptConfirm(true, false)" title="Confirm Bill (F7)">
+              <mat-icon>verified</mat-icon>
+              <span>Confirm</span>
+            </button>
+          </div>
+        </aside>
+      }
     </div>
   `,
   styles: [`
@@ -3129,6 +3149,11 @@ interface BillLine {
     .sep-dot { margin: 0 4px; color: #cbd5e1; }
     .text-center { text-align: center; }
 
+    /* MOBILE STICKY CHECKOUT BAR (DESKTOP HIDDEN) */
+    .mobile-sticky-checkout {
+      display: none;
+    }
+
     /* RESPONSIVE LAYOUT */
     @media (max-width: 1100px) {
       .pos-workspace {
@@ -3138,17 +3163,202 @@ interface BillLine {
       }
       .pos-container {
         height: auto;
+        min-height: 100vh;
         overflow: visible;
       }
       :host {
         height: auto;
         overflow: visible;
       }
+      .bill-table-wrapper {
+        min-height: 320px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
       .table-row-card, .table-header-row {
         min-width: 680px;
       }
-      .bill-table-wrapper {
-        min-height: 400px;
+    }
+
+    @media (max-width: 860px) {
+      .pos-container {
+        padding-bottom: 88px; /* clearance so sticky mobile dock doesn't obscure content */
+      }
+      .pos-topbar {
+        height: auto;
+        min-height: 48px;
+        padding: 6px 10px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .topbar-left {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .topbar-right {
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .topbar-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+        min-height: 38px;
+      }
+
+      /* Sticky Mobile Checkout Bar Active */
+      .mobile-sticky-checkout {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #ffffff;
+        border-top: 1px solid #cbd5e1;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+        padding: 10px 14px;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        z-index: 1000;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        animation: fadeIn 0.2s ease-out;
+      }
+      .m-checkout-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .m-total-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #64748b;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .m-total-val {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--brand);
+      }
+      .m-checkout-actions {
+        display: flex;
+        gap: 8px;
+      }
+      .btn-m-pay, .btn-m-confirm {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        border: 0;
+        min-height: 42px;
+        transition: transform 0.1s ease, filter 0.15s ease;
+      }
+      .btn-m-pay {
+        background: #0f766e;
+        color: #ffffff;
+      }
+      .btn-m-pay:hover {
+        background: #0d9488;
+      }
+      .btn-m-confirm {
+        background: #047857;
+        color: #ffffff;
+      }
+      .btn-m-confirm:hover {
+        background: #059669;
+      }
+
+      /* Modals on Mobile & Tablets */
+      .modal-card {
+        width: min(94vw, 540px) !important;
+        max-height: 92vh !important;
+        margin: 10px auto;
+      }
+      .modal-body {
+        padding: 14px;
+        gap: 12px;
+      }
+      .modal-head {
+        padding: 12px 14px;
+      }
+      .modal-foot {
+        padding: 12px 14px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .modal-foot button {
+        flex: 1;
+        min-height: 44px;
+      }
+      .drawer-card {
+        width: min(94vw, 480px) !important;
+      }
+      .uniform-summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* Payment Mode Tabs on Mobile */
+      .payment-tabs-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      /* Pos Act Buttons on Mobile */
+      .pos-action-buttons {
+        grid-template-columns: 1fr 1fr;
+      }
+      .btn-pay-print, .btn-confirm {
+        min-height: 48px;
+      }
+    }
+
+    @media (max-width: 580px) {
+      .pos-brand-pill .brand-title {
+        display: none;
+      }
+      .pos-context-pill {
+        display: none;
+      }
+      .topbar-btn span {
+        display: none;
+      }
+      .topbar-btn {
+        padding: 6px;
+        min-width: 38px;
+        justify-content: center;
+      }
+      .search-section {
+        padding: 8px 10px;
+      }
+      .main-search-input {
+        font-size: 14px;
+      }
+      .search-kbd-hint {
+        display: none;
+      }
+      .cart-panel {
+        padding: 6px;
+      }
+      .settlement-panel {
+        padding: 6px;
+      }
+      .payment-tabs-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .cash-chips-row {
+        flex-wrap: wrap;
+      }
+      .cash-chip {
+        padding: 6px 10px;
+      }
+      .btn-m-pay span, .btn-m-confirm span {
+        font-size: 12px;
+      }
+      .btn-m-pay, .btn-m-confirm {
+        padding: 8px 10px;
       }
     }
   `]

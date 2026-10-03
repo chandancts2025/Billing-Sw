@@ -130,7 +130,20 @@ import { BillHistoryRowDto, PaymentMethod, PrintInvoiceDto, SalesInvoiceStatus }
     .empty { text-align: center; color: #667085; padding: 36px; }
     .preview { display: grid; gap: 8px; padding: 10px; }
     iframe { width: 100%; height: 560px; border: 1px solid #e4e8ef; border-radius: 6px; background: white; }
-    @media (max-width: 980px) { .filters { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 980px) {
+      .filters { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .history-page { padding: 10px; gap: 10px; }
+      .page-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .page-head button { width: 100%; justify-content: center; }
+      .filters { grid-template-columns: 1fr; gap: 8px; }
+      .filters button { width: 100%; height: 44px; }
+      .export-bar { width: 100%; }
+      .export-bar button { flex: 1; }
+      .table-wrap { -webkit-overflow-scrolling: touch; }
+      iframe { height: 420px; }
+    }
   `]
 })
 export class BillingHistoryComponent {

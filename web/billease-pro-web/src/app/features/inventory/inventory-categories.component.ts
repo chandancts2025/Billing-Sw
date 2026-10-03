@@ -311,6 +311,16 @@ interface DepartmentOption {
       .field-grid { grid-template-columns: 1fr; }
       .col-span-2 { grid-column: span 1; }
     }
+
+    @media (max-width: 640px) {
+      .page { padding: 10px; gap: 10px; }
+      .page-head { flex-direction: column; align-items: flex-start; gap: 8px; }
+      .head-pill { display: none; }
+      .tree-list { max-height: 380px; }
+      .color-order-row { grid-template-columns: 1fr; }
+      .form-actions { flex-direction: column; gap: 10px; align-items: stretch; }
+      .btn-group { width: 100%; justify-content: space-between; }
+    }
   `]
 })
 export class InventoryCategoriesComponent {

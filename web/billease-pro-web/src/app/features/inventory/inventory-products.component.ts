@@ -1238,8 +1238,14 @@ interface OperatingModeOption {
     @media (max-width: 1100px) {
       .content { grid-template-columns: 1fr; }
       .field-grid { grid-template-columns: 1fr 1fr; }
+      .list-card, .product-form { max-height: none; }
     }
     @media (max-width: 680px) {
+      .products-page { padding: 10px; }
+      .page-head { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .head-actions { width: 100%; display: flex; gap: 8px; }
+      .head-actions button { flex: 1; }
+      .mode-pills { overflow-x: auto; width: 100%; padding-bottom: 4px; }
       .field-grid { grid-template-columns: 1fr; }
       .col-2 { grid-column: span 1; }
       .ctrl-grid { grid-template-columns: 1fr; }

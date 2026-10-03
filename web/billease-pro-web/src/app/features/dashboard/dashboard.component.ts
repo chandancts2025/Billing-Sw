@@ -295,6 +295,21 @@ import { ReportChartComponent } from '../reports/report-chart.component';
 
     @media (max-width: 960px) {
       .lower-grid { grid-template-columns: 1fr; }
+      .dash-head { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .actions-block { width: 100%; justify-content: space-between; }
+    }
+
+    @media (max-width: 640px) {
+      .dashboard-container { padding: 12px; gap: 12px; }
+      .dash-head h1 { font-size: 20px; }
+      .kpi-grid { grid-template-columns: 1fr; gap: 10px; }
+      .charts-grid { grid-template-columns: 1fr; gap: 10px; }
+      .range-pills { width: 100%; overflow-x: auto; }
+      .quick-bill-btn { width: 100%; justify-content: center; }
+      .quick-shortcuts .shortcut-buttons { width: 100%; }
+      .shortcut-buttons a { flex: 1 1 calc(50% - 6px); justify-content: center; font-size: 11px; }
+      .heatmap-panel { overflow-x: auto; }
+      .heatmap-strip { min-width: 460px; }
     }
   `]
 })

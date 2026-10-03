@@ -17,14 +17,18 @@ import { TopbarComponent } from '../../shared/layout/topbar.component';
   standalone: true,
   imports: [RouterOutlet, MatButtonModule, MatIconModule, MatProgressBarModule, BreadcrumbComponent, SidebarComponent, TopbarComponent],
   template: `
-    <div class="shell" [class.sidebar-collapsed]="collapsed()">
-      <be-sidebar [items]="visibleNav()" [collapsed]="collapsed()" (toggle)="toggleSidebar()" />
+    <div class="shell" [class.sidebar-collapsed]="collapsed()" [class.mobile-nav-open]="mobileMenuOpen()">
+      <be-sidebar [items]="visibleNav()" [collapsed]="collapsed()" (toggle)="toggleSidebar()" (close)="mobileMenuOpen.set(false)" />
+      @if (mobileMenuOpen()) {
+        <div class="mobile-sidebar-backdrop" (click)="mobileMenuOpen.set(false)"></div>
+      }
       <main>
         <be-topbar
           [shopName]="shopName()"
           [userName]="auth.user()?.fullName ?? ''"
           [role]="auth.user()?.role ?? ''"
           [unread]="notifications.unreadCount()"
+          (menuToggle)="mobileMenuOpen.set(!mobileMenuOpen())"
           (help)="showHelp.set(true)"
           (notifications)="showNotifications.set(!showNotifications())"
           (theme)="shop.toggleDarkMode()"
@@ -81,6 +85,7 @@ export class ShellComponent {
   readonly notifications = inject(NotificationService);
   readonly shop = inject(ShopStore);
   readonly collapsed = signal(false);
+  readonly mobileMenuOpen = signal(false);
   readonly online = signal(navigator.onLine);
   readonly showHelp = signal(false);
   readonly showNotifications = signal(false);
