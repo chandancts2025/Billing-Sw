@@ -175,18 +175,32 @@ app.UseAuthorization();
 if (builder.Configuration.GetValue<bool>("Database:AutoMigrate", true))
 {
     using var scope = app.Services.CreateScope();
-    try
+    var db = scope.ServiceProvider.GetRequiredService<BillEaseDbContext>();
+    if (db.Database.IsRelational())
     {
-        var db = scope.ServiceProvider.GetRequiredService<BillEaseDbContext>();
-        if (db.Database.IsRelational())
+        db.Database.SetCommandTimeout(300);
+        for (int attempt = 1; attempt <= 3; attempt++)
         {
-            db.Database.Migrate();
-            Log.Information("Database migrations applied successfully on startup.");
+            try
+            {
+                Log.Information("Applying database migrations on startup (attempt {Attempt}/3)...", attempt);
+                db.Database.Migrate();
+                Log.Information("Database migrations applied successfully on startup.");
+                break;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Database migration attempt {Attempt} encountered an issue: {Message}", attempt, ex.Message);
+                if (attempt == 3)
+                {
+                    Log.Error(ex, "Failed to apply automatic database migrations on startup after 3 attempts. You can trigger them manually via POST /api/v1/system/migrate");
+                }
+                else
+                {
+                    Thread.Sleep(5000);
+                }
+            }
         }
-    }
-    catch (Exception ex)
-    {
-        Log.Warning(ex, "Could not apply automatic database migrations on startup. Verify the database connection string.");
     }
 }
 
