@@ -7,8 +7,10 @@ using BillEasePro.Api.Services;
 using BillEasePro.Application;
 using BillEasePro.Application.Abstractions;
 using BillEasePro.Infrastructure;
+using BillEasePro.Infrastructure.Persistence;
 using BillEasePro.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -32,7 +34,21 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Angular", policy => policy
-        .WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["http://localhost:4200"])
+        .SetIsOriginAllowed(origin =>
+        {
+            if (string.IsNullOrWhiteSpace(origin)) return false;
+            var allowed = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? ["http://localhost:4200"];
+            if (allowed.Contains(origin) || allowed.Contains("*")) return true;
+            try
+            {
+                var uri = new Uri(origin);
+                return uri.Host.EndsWith("vercel.app") || uri.Host.EndsWith("netlify.app") || uri.Host == "localhost";
+            }
+            catch
+            {
+                return false;
+            }
+        })
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials());
@@ -141,5 +157,24 @@ app.UseCors("Angular");
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+// Apply pending database migrations on startup if configured (ideal for automated cloud deployment)
+if (builder.Configuration.GetValue<bool>("Database:AutoMigrate", true))
+{
+    using var scope = app.Services.CreateScope();
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<BillEaseDbContext>();
+        if (db.Database.IsRelational())
+        {
+            db.Database.Migrate();
+            Log.Information("Database migrations applied successfully on startup.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Could not apply automatic database migrations on startup. Verify the database connection string.");
+    }
+}
+
 app.MapControllers();
 app.Run();
