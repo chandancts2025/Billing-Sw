@@ -95,4 +95,54 @@ public sealed class SystemController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// Seeds rich demonstration data (Categories, Products with barcodes, Stock, Customers, Suppliers, Bills)
+    /// to showcase the POS to clients.
+    /// </summary>
+    [HttpPost("seed-demo")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SeedDemoData(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var defaultShop = await _dbContext.Shops.FirstOrDefaultAsync(cancellationToken)
+                ?? new Domain.Entities.Shop
+                {
+                    Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),
+                    Name = "BillEase Supermarket & Pharmacy",
+                    CreatedBy = "system"
+                };
+
+            if (_dbContext.Entry(defaultShop).State == EntityState.Detached)
+            {
+                _dbContext.Shops.Add(defaultShop);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+
+            var count = await BillEasePro.Infrastructure.Services.DemoShowcaseSeeder.SeedAsync(_dbContext, defaultShop.Id, _logger, cancellationToken);
+            var totalProducts = await _dbContext.Products.CountAsync(p => p.ShopId == defaultShop.Id, cancellationToken);
+            var totalCategories = await _dbContext.Categories.CountAsync(c => c.ShopId == defaultShop.Id, cancellationToken);
+
+            return Ok(new
+            {
+                Success = true,
+                Message = $"Showcase demo data populated successfully for shop: {defaultShop.Name}.",
+                ProductsAdded = count,
+                TotalProducts = totalProducts,
+                TotalCategories = totalCategories
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to seed showcase demo data");
+            return StatusCode(StatusCodes.Status500InternalServerError, new
+            {
+                Success = false,
+                Message = "Failed to seed demo data.",
+                Error = ex.Message,
+                Details = ex.ToString()
+            });
+        }
+    }
 }

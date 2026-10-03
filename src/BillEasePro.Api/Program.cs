@@ -186,6 +186,22 @@ if (builder.Configuration.GetValue<bool>("Database:AutoMigrate", true))
                 Log.Information("Applying database migrations on startup (attempt {Attempt}/3)...", attempt);
                 db.Database.Migrate();
                 Log.Information("Database migrations applied successfully on startup.");
+
+                // Auto-seed rich showcase data if catalog has few items
+                try
+                {
+                    var shop = db.Shops.FirstOrDefault();
+                    if (shop != null && db.Products.Count(p => p.ShopId == shop.Id) < 20)
+                    {
+                        Log.Information("Catalog has fewer than 20 items. Automatically seeding showcase products and categories...");
+                        BillEasePro.Infrastructure.Services.DemoShowcaseSeeder.SeedAsync(db, shop.Id).GetAwaiter().GetResult();
+                        Log.Information("Showcase products and categories seeded successfully.");
+                    }
+                }
+                catch (Exception seedEx)
+                {
+                    Log.Warning(seedEx, "Could not complete automatic demo data seeding on startup.");
+                }
                 break;
             }
             catch (Exception ex)
