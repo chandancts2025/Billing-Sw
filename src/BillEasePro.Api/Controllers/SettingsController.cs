@@ -1,11 +1,12 @@
-using BillEasePro.Application.Dtos;
+using System.Text.Json;
 using Asp.Versioning;
-using Microsoft.EntityFrameworkCore;
 using BillEasePro.Application.Abstractions;
+using BillEasePro.Application.Dtos;
 using BillEasePro.Domain.Entities;
-using MediatR;
+using BillEasePro.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace BillEasePro.Api.Controllers;
 
@@ -28,61 +29,132 @@ public sealed class SettingsController : ControllerBase
 
     [HttpGet("shops/{shopId:guid}")]
     [AllowAnonymous]
-    public async Task<ActionResult<ShopSettingsDto>> GetShopSettings(Guid shopId, CancellationToken cancellationToken)
+    public async Task<ActionResult<object>> GetShopSettings(Guid shopId, CancellationToken cancellationToken)
     {
         var shop = await _shops.GetByIdAsync(shopId, cancellationToken);
         if (shop is null) return NotFound();
 
-        var settings = await _settings.Query().Where(x => x.ShopId == shopId).ToDictionaryAsync(x => x.Key, x => x.Value, cancellationToken);
+        var settings = await _settings.Query()
+            .Where(x => x.ShopId == shopId)
+            .ToDictionaryAsync(x => x.Key, x => x.Value, cancellationToken);
 
         string get(string key, string @default) => settings.TryGetValue(key, out var v) ? v : @default;
 
-        var dto = new ShopSettingsDto(
-            ShopId: shop.Id,
-            ShopName: shop.Name,
-            BrandColor: get("BrandColor", "#0f766e"),
-            DarkModeEnabled: bool.TryParse(get("DarkModeEnabled", "false"), out var dm) && dm,
-            IdleTimeoutMinutes: int.TryParse(get("IdleTimeoutMinutes", "30"), out var it) ? it : 30,
-            PreventMultipleOperatorSessions: bool.TryParse(get("PreventMultipleOperatorSessions", "true"), out var pm) && pm
-        );
-
-        return Ok(dto);
+        return Ok(new
+        {
+            shopId = shop.Id,
+            shopName = shop.Name,
+            legalName = shop.LegalName,
+            taxRegistrationNumber = shop.TaxRegistrationNumber,
+            industryType = shop.IndustryType.ToString(),
+            taxRegime = shop.TaxRegime.ToString(),
+            currencyCode = shop.CurrencyCode,
+            phone = shop.Phone,
+            email = shop.Email,
+            addressLine1 = shop.AddressLine1,
+            addressLine2 = shop.AddressLine2,
+            city = shop.City,
+            state = shop.State,
+            postalCode = shop.PostalCode,
+            country = shop.Country,
+            brandColor = get("BrandColor", "#0f766e"),
+            darkModeEnabled = bool.TryParse(get("DarkModeEnabled", "false"), out var dm) && dm,
+            idleTimeoutMinutes = int.TryParse(get("IdleTimeoutMinutes", "30"), out var it) ? it : 30,
+            preventMultipleOperatorSessions = bool.TryParse(get("PreventMultipleOperatorSessions", "true"), out var pm) && pm,
+            settings
+        });
     }
 
     [HttpPut("shops/{shopId:guid}")]
-    public async Task<IActionResult> UpdateShopSettings(Guid shopId, [FromBody] ShopSettingsDto dto, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateShopSettings(Guid shopId, [FromBody] JsonElement payload, CancellationToken cancellationToken)
     {
         var shop = await _shops.GetByIdAsync(shopId, cancellationToken);
         if (shop is null) return NotFound();
 
-        // update shop name
-        if (!string.Equals(shop.Name, dto.ShopName, StringComparison.Ordinal))
+        if (payload.ValueKind == JsonValueKind.Object)
         {
-            shop.Name = dto.ShopName;
-            _shops.Update((Shop)shop);
-        }
-
-        // upsert settings
-        async Task upsert(string key, string value)
-        {
-            var existing = await _settings.Query().FirstOrDefaultAsync(x => x.ShopId == shopId && x.Key == key, cancellationToken);
-            if (existing is null)
+            foreach (var prop in payload.EnumerateObject())
             {
-                var s = new ShopSetting { Id = Guid.NewGuid(), ShopId = shopId, Key = key, Value = value };
-                await _settings.AddAsync(s, cancellationToken);
-            }
-            else
-            {
-                existing.Value = value;
-            }
-        }
+                var name = prop.Name;
+                var val = prop.Value.ValueKind switch
+                {
+                    JsonValueKind.String => prop.Value.GetString() ?? "",
+                    JsonValueKind.Number => prop.Value.GetRawText(),
+                    JsonValueKind.True => "true",
+                    JsonValueKind.False => "false",
+                    JsonValueKind.Null => "",
+                    _ => prop.Value.GetRawText()
+                };
 
-        await upsert("BrandColor", dto.BrandColor ?? "#0f766e");
-        await upsert("DarkModeEnabled", dto.DarkModeEnabled.ToString());
-        await upsert("IdleTimeoutMinutes", dto.IdleTimeoutMinutes.ToString());
-        await upsert("PreventMultipleOperatorSessions", dto.PreventMultipleOperatorSessions.ToString());
+                // Map direct Shop entity properties
+                if (name.Equals("shopName", StringComparison.OrdinalIgnoreCase) || name.Equals("name", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!string.IsNullOrWhiteSpace(val)) shop.Name = val;
+                }
+                else if (name.Equals("legalName", StringComparison.OrdinalIgnoreCase)) shop.LegalName = val;
+                else if (name.Equals("taxRegistrationNumber", StringComparison.OrdinalIgnoreCase) || name.Equals("gstin", StringComparison.OrdinalIgnoreCase)) shop.TaxRegistrationNumber = val;
+                else if (name.Equals("phone", StringComparison.OrdinalIgnoreCase) || name.Equals("primaryPhone", StringComparison.OrdinalIgnoreCase)) shop.Phone = val;
+                else if (name.Equals("email", StringComparison.OrdinalIgnoreCase)) shop.Email = val;
+                else if (name.Equals("addressLine1", StringComparison.OrdinalIgnoreCase) || name.Equals("line1", StringComparison.OrdinalIgnoreCase)) shop.AddressLine1 = val;
+                else if (name.Equals("addressLine2", StringComparison.OrdinalIgnoreCase) || name.Equals("line2", StringComparison.OrdinalIgnoreCase)) shop.AddressLine2 = val;
+                else if (name.Equals("city", StringComparison.OrdinalIgnoreCase)) shop.City = val;
+                else if (name.Equals("state", StringComparison.OrdinalIgnoreCase)) shop.State = val;
+                else if (name.Equals("postalCode", StringComparison.OrdinalIgnoreCase) || name.Equals("pincode", StringComparison.OrdinalIgnoreCase)) shop.PostalCode = val;
+                else if (name.Equals("country", StringComparison.OrdinalIgnoreCase)) shop.Country = val;
+                else if (name.Equals("currencyCode", StringComparison.OrdinalIgnoreCase)) shop.CurrencyCode = val;
+                else if (name.Equals("industryType", StringComparison.OrdinalIgnoreCase) && Enum.TryParse<IndustryType>(val, true, out var ind)) shop.IndustryType = ind;
+                else if (name.Equals("taxRegime", StringComparison.OrdinalIgnoreCase) && Enum.TryParse<TaxRegime>(val, true, out var tr)) shop.TaxRegime = tr;
+
+                // Also persist to ShopSetting key-values
+                await UpsertSettingAsync(shopId, name, val, cancellationToken);
+            }
+
+            _shops.Update(shop);
+        }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return NoContent();
+    }
+
+    [HttpGet("workspace/{shopId:guid}")]
+    [AllowAnonymous]
+    public async Task<ActionResult<Dictionary<string, string>>> GetWorkspaceSettings(Guid shopId, CancellationToken cancellationToken)
+    {
+        var settings = await _settings.Query()
+            .Where(x => x.ShopId == shopId)
+            .ToDictionaryAsync(x => x.Key, x => x.Value, cancellationToken);
+        return Ok(settings);
+    }
+
+    [HttpPut("workspace/{shopId:guid}")]
+    public async Task<IActionResult> SaveWorkspaceSettings(Guid shopId, [FromBody] Dictionary<string, string> settings, CancellationToken cancellationToken)
+    {
+        foreach (var (key, val) in settings)
+        {
+            await UpsertSettingAsync(shopId, key, val, cancellationToken);
+        }
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return NoContent();
+    }
+
+    private async Task UpsertSettingAsync(Guid shopId, string key, string value, CancellationToken cancellationToken)
+    {
+        var existing = await _settings.Query().FirstOrDefaultAsync(x => x.ShopId == shopId && x.Key == key, cancellationToken);
+        if (existing is null)
+        {
+            await _settings.AddAsync(new ShopSetting
+            {
+                Id = Guid.NewGuid(),
+                ShopId = shopId,
+                Key = key,
+                Value = value,
+                DataType = SettingDataType.String
+            }, cancellationToken);
+        }
+        else
+        {
+            existing.Value = value;
+            existing.UpdatedAt = DateTimeOffset.UtcNow;
+        }
     }
 }

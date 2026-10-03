@@ -87,8 +87,15 @@ public sealed class SearchProductsQueryHandler : IRequestHandler<SearchProductsQ
                 product.TaxSlab?.Rate ?? 0,
                 product.HsnSacCode,
                 product.MaxDiscountPercent,
-                product.Category?.Name.Equals("Pharmacy", StringComparison.OrdinalIgnoreCase) == true && batches.Count > 0,
-                batches);
+                (product.Category?.CategoryType == CategoryType.Pharmacy || product.Category?.Name.Equals("Pharmacy", StringComparison.OrdinalIgnoreCase) == true) && batches.Count > 0,
+                batches,
+                product.Category?.CategoryType ?? CategoryType.General,
+                product.RackLocation,
+                product.FoodType,
+                product.RequiresPrescription,
+                product.WarrantyMonths,
+                product.PackageSize,
+                product.MinSellingPrice);
         }).ToList();
     }
 
@@ -486,44 +493,125 @@ public sealed class GetPrintInvoiceQueryHandler : IRequestHandler<GetPrintInvoic
             .FirstOrDefaultAsync(x => x.Id == request.SalesInvoiceId, cancellationToken)
             ?? throw new KeyNotFoundException("Sales invoice not found.");
 
-        var summary = $"{invoice.Shop?.Name} {invoice.InvoiceNumber} Total {invoice.GrandTotal:0.00}";
+        var shopPhone = invoice.Shop?.Phone?.Replace("+91-", "").Replace("+91", "").Replace("-", "").Trim() ?? "9000000000";
+        var upiId = $"{shopPhone}@upi";
+        var shopName = invoice.Shop?.Name ?? "BillEase Pro Store";
+        var upiUri = $"upi://pay?pa={upiId}&pn={Uri.EscapeDataString(shopName)}&am={invoice.GrandTotal:0.00}&tn={invoice.InvoiceNumber}&cu=INR";
+        var qrCodeUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=110x110&data={Uri.EscapeDataString(upiUri)}";
+
+        var customerPhone = invoice.Customer?.Phone?.Replace("+", "").Replace("-", "").Replace(" ", "") ?? "";
+        var waSummary = $"*{shopName}*\n🧾 Invoice: {invoice.InvoiceNumber}\n📅 Date: {invoice.InvoiceDate:dd MMM yyyy HH:mm}\n📦 Items: {invoice.Items.Count}\n💰 Grand Total: Rs. {invoice.GrandTotal:0.00}\n💳 Payment: {string.Join(", ", invoice.Payments.Select(p => $"{p.Method}: Rs. {p.Amount:0.00}"))}\n\nThank you for shopping with us!";
+        var waLink = string.IsNullOrWhiteSpace(customerPhone)
+            ? $"https://wa.me/?text={Uri.EscapeDataString(waSummary)}"
+            : $"https://wa.me/{customerPhone}?text={Uri.EscapeDataString(waSummary)}";
+
         return new PrintInvoiceDto(
             invoice.InvoiceNumber,
-            PrintTemplate(invoice, "a4"),
-            PrintTemplate(invoice, "80"),
-            PrintTemplate(invoice, "58"),
-            $"https://wa.me/?text={Uri.EscapeDataString(summary)}",
+            PrintTemplate(invoice, "a4", qrCodeUrl, upiId),
+            PrintTemplate(invoice, "80", qrCodeUrl, upiId),
+            PrintTemplate(invoice, "58", qrCodeUrl, upiId),
+            waLink,
             invoice.Customer?.Email);
     }
 
-    private static string PrintTemplate(SalesInvoice invoice, string mode)
+    private static string PrintTemplate(SalesInvoice invoice, string mode, string qrCodeUrl, string upiId)
     {
         var compact = mode != "a4";
         var width = mode == "58" ? "58mm" : mode == "80" ? "80mm" : "210mm";
-        var rows = string.Join("", invoice.Items.Select(item => $"<tr><td>{WebUtility.HtmlEncode(item.Description)}<br><small>{WebUtility.HtmlEncode(item.Product?.HsnSacCode ?? "")}</small></td><td>{item.Quantity:0.##}</td><td>{item.TaxRate:0.##}%</td><td>{item.LineTotal:0.00}</td></tr>"));
+        var padding = compact ? "6px" : "24px";
+        var fontSize = mode == "58" ? "10px" : mode == "80" ? "12px" : "13px";
+
+        var rows = string.Join("", invoice.Items.Select(item =>
+            $"<tr><td><strong>{WebUtility.HtmlEncode(item.Description)}</strong>{(string.IsNullOrWhiteSpace(item.Product?.HsnSacCode) ? "" : $"<br><small style='color:#555;'>HSN: {WebUtility.HtmlEncode(item.Product.HsnSacCode)}</small>")}</td><td style='text-align:center;'>{item.Quantity:0.##}</td><td style='text-align:right;'>{item.UnitPrice:0.00}</td><td style='text-align:right;'>{item.TaxRate:0.##}%</td><td style='text-align:right;'><strong>{item.LineTotal:0.00}</strong></td></tr>"));
+
+        var payments = string.Join(", ", invoice.Payments.Select(p => $"{p.Method}: Rs. {p.Amount:0.00}"));
+        if (string.IsNullOrWhiteSpace(payments)) payments = invoice.PaymentStatus.ToString();
+
+        var customerName = invoice.Customer?.Name ?? (invoice.Notes?.StartsWith("Walk-in:") == true ? invoice.Notes.Split('.')[0].Replace("Walk-in:", "").Trim() : "Walk-in Customer");
+        var customerPhone = invoice.Customer?.Phone ?? "";
+
+        var savings = invoice.DiscountTotal > 0
+            ? $"<div style='background:#e6f4ea;color:#137333;padding:4px 8px;border-radius:4px;font-weight:bold;text-align:center;margin:6px 0;'>🎉 Total Savings: Rs. {invoice.DiscountTotal:0.00}</div>"
+            : "";
+
         return $$"""
-        <html><head><style>
-        body{font-family:Arial,sans-serif;width:{{width}};margin:0 auto;color:#111;font-size:{{(compact ? "11px" : "13px")}};}
-        h1,h2,p{margin:0 0 4px;text-align:center;} table{width:100%;border-collapse:collapse;margin-top:8px;}
-        th,td{border-bottom:1px solid #ddd;padding:4px;text-align:right;} th:first-child,td:first-child{text-align:left;}
-        .totals{margin-top:8px;display:grid;gap:3px;} .totals div{display:flex;justify-content:space-between;}
-        .grand{font-size:{{(compact ? "14px" : "18px")}};font-weight:700;}
+        <!DOCTYPE html>
+        <html><head><meta charset="utf-8">
+        <title>Invoice {{invoice.InvoiceNumber}}</title>
+        <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; width: {{width}}; margin: 0 auto; padding: {{padding}}; color: #111; font-size: {{fontSize}}; box-sizing: border-box; background: #fff; }
+        .center { text-align: center; }
+        .header { border-bottom: 2px dashed #bbb; padding-bottom: 8px; margin-bottom: 8px; text-align: center; }
+        .header h1 { margin: 0 0 4px; font-size: {{(compact ? "16px" : "24px")}}; color: #0f766e; }
+        .header p { margin: 2px 0; color: #444; }
+        .meta-grid { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: {{(compact ? "10px" : "12px")}}; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        .meta-grid div { display: flex; flex-direction: column; gap: 2px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+        th { border-bottom: 1px solid #333; padding: 4px; text-align: left; font-size: {{(compact ? "10px" : "11px")}}; text-transform: uppercase; color: #333; }
+        td { border-bottom: 1px dashed #ddd; padding: 5px 4px; vertical-align: top; }
+        .totals { margin-top: 8px; border-top: 1px solid #333; padding-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+        .totals div { display: flex; justify-content: space-between; font-size: {{(compact ? "11px" : "13px")}}; }
+        .grand { font-size: {{(compact ? "14px" : "18px")}}; font-weight: 800; border-top: 1px dashed #333; border-bottom: 1px dashed #333; padding: 4px 0; margin: 4px 0; color: #0f766e; }
+        .upi-qr { text-align: center; margin-top: 10px; padding: 8px; background: #f9fbfb; border: 1px solid #e1e7e7; border-radius: 6px; }
+        .upi-qr img { width: 90px; height: 90px; display: block; margin: 4px auto; }
+        .footer { margin-top: 12px; text-align: center; font-size: {{(compact ? "9px" : "11px")}}; color: #666; border-top: 1px dashed #bbb; padding-top: 8px; }
+        @media print { body { width: 100%; margin: 0; padding: 0; } }
         </style></head><body>
-        <h1>{{WebUtility.HtmlEncode(invoice.Shop?.Name ?? "BillEase Pro")}}</h1>
-        <p>{{WebUtility.HtmlEncode(invoice.Shop?.AddressLine1 ?? "")}}, {{WebUtility.HtmlEncode(invoice.Shop?.City ?? "")}}</p>
-        <p>GSTIN {{WebUtility.HtmlEncode(invoice.Shop?.TaxRegistrationNumber ?? "")}}</p>
-        <h2>{{(compact ? "Bill" : "Tax Invoice")}} #{{invoice.InvoiceNumber}}</h2>
-        <p>{{invoice.InvoiceDate.ToString("dd MMM yyyy HH:mm", CultureInfo.InvariantCulture)}}</p>
-        <table><thead><tr><th>Item</th><th>Qty</th><th>Tax</th><th>Total</th></tr></thead><tbody>{{rows}}</tbody></table>
-        <section class="totals">
-        <div><span>Subtotal</span><strong>{{invoice.SubTotal.ToString("0.00", CultureInfo.InvariantCulture)}}</strong></div>
-        <div><span>Discount</span><strong>{{invoice.DiscountTotal.ToString("0.00", CultureInfo.InvariantCulture)}}</strong></div>
-        <div><span>Tax</span><strong>{{invoice.TaxTotal.ToString("0.00", CultureInfo.InvariantCulture)}}</strong></div>
-        <div><span>Round off</span><strong>{{invoice.RoundOff.ToString("0.00", CultureInfo.InvariantCulture)}}</strong></div>
-        <div class="grand"><span>Total</span><strong>{{invoice.GrandTotal.ToString("0.00", CultureInfo.InvariantCulture)}}</strong></div>
-        </section>
-        {{(compact ? "" : "<p>Terms: Goods once sold are subject to store return policy.</p>")}}
-        <p>Thank you for your business.</p>
+        <div class="header">
+          <h1>{{WebUtility.HtmlEncode(invoice.Shop?.Name ?? "BillEase Pro")}}</h1>
+          <p>{{WebUtility.HtmlEncode(invoice.Shop?.AddressLine1 ?? "")}}{{(string.IsNullOrWhiteSpace(invoice.Shop?.City) ? "" : $", {WebUtility.HtmlEncode(invoice.Shop.City)}")}}</p>
+          {{(string.IsNullOrWhiteSpace(invoice.Shop?.Phone) ? "" : $"<p>Tel: {WebUtility.HtmlEncode(invoice.Shop.Phone)}</p>")}}
+          {{(string.IsNullOrWhiteSpace(invoice.Shop?.TaxRegistrationNumber) ? "" : $"<p><strong>GSTIN: {WebUtility.HtmlEncode(invoice.Shop.TaxRegistrationNumber)}</strong></p>")}}
+          <h3 style="margin: 6px 0 2px; font-size: {{(compact ? "12px" : "16px")}};">TAX INVOICE</h3>
+        </div>
+
+        <div class="meta-grid">
+          <div>
+            <span><strong>Invoice:</strong> {{invoice.InvoiceNumber}}</span>
+            <span><strong>Date:</strong> {{invoice.InvoiceDate.ToString("dd MMM yyyy hh:mm tt", CultureInfo.InvariantCulture)}}</span>
+          </div>
+          <div style="text-align: right;">
+            <span><strong>Customer:</strong> {{WebUtility.HtmlEncode(customerName)}}</span>
+            {{(string.IsNullOrWhiteSpace(customerPhone) ? "" : $"<span><strong>Phone:</strong> {WebUtility.HtmlEncode(customerPhone)}</span>")}}
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th style="text-align: center;">Qty</th>
+              <th style="text-align: right;">Rate</th>
+              <th style="text-align: right;">Tax</th>
+              <th style="text-align: right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {{rows}}
+          </tbody>
+        </table>
+
+        {{savings}}
+
+        <div class="totals">
+          <div><span>Subtotal</span><span>Rs. {{invoice.SubTotal.ToString("0.00", CultureInfo.InvariantCulture)}}</span></div>
+          {{(invoice.DiscountTotal > 0 ? $"<div><span>Discount</span><span>- Rs. {invoice.DiscountTotal.ToString("0.00", CultureInfo.InvariantCulture)}</span></div>" : "")}}
+          <div><span>Tax Amount</span><span>Rs. {{invoice.TaxTotal.ToString("0.00", CultureInfo.InvariantCulture)}}</span></div>
+          {{(invoice.RoundOff != 0 ? $"<div><span>Round off</span><span>Rs. {invoice.RoundOff.ToString("0.00", CultureInfo.InvariantCulture)}</span></div>" : "")}}
+          <div class="grand"><span>GRAND TOTAL</span><span>Rs. {{invoice.GrandTotal.ToString("0.00", CultureInfo.InvariantCulture)}}</span></div>
+          <div style="font-size: 11px; color: #444;"><span>Payment:</span><strong>{{payments}}</strong></div>
+        </div>
+
+        <div class="upi-qr">
+          <small style="font-weight: 600; color: #0f766e;">Scan UPI QR to Pay / Verify</small>
+          <img src="{{qrCodeUrl}}" alt="UPI QR">
+          <small style="color: #666; font-size: 9px;">UPI: {{upiId}}</small>
+        </div>
+
+        <div class="footer">
+          <p>Thank you for your visit! Goods once sold subject to store return policy.</p>
+          <p>Software Powered by <strong>BillEase Pro</strong></p>
+        </div>
         </body></html>
         """;
     }
@@ -642,7 +730,19 @@ internal static class BillingCalculator
 
         var preliminary = items.Select(item =>
         {
-            if (!productMap.TryGetValue(item.ProductId, out var product)) throw new KeyNotFoundException($"Product '{item.ProductId}' was not found.");
+            if (!productMap.TryGetValue(item.ProductId, out var product))
+            {
+                product = new Product
+                {
+                    Id = item.ProductId,
+                    ShopId = shopId,
+                    Name = "Custom / Non-Inventory Item",
+                    Sku = "CUSTOM",
+                    SellingPrice = item.UnitPrice,
+                    MaxDiscountPercent = 100,
+                    IsTaxInclusive = false
+                };
+            }
             var gross = Math.Round(item.Quantity * item.UnitPrice, 2);
             var rawDiscount = item.DiscountType == DiscountValueType.Percentage ? gross * item.DiscountValue / 100 : item.DiscountValue;
             var maxDiscount = gross * product.MaxDiscountPercent / 100;
@@ -717,4 +817,337 @@ internal static class BillingCalculator
 
     private static string GetSetting(Dictionary<string, string> settings, string key, string fallback)
         => settings.TryGetValue(key, out var value) ? value : fallback;
+}
+
+public sealed class GetSaleInvoiceForEditQueryHandler : IRequestHandler<GetSaleInvoiceForEditQuery, SaleInvoiceForEditDto>
+{
+    private readonly IRepository<SalesInvoice> _invoices;
+    private readonly IRepository<Product> _products;
+    private readonly IRepository<InventoryStock> _stocks;
+
+    public GetSaleInvoiceForEditQueryHandler(IRepository<SalesInvoice> invoices, IRepository<Product> products, IRepository<InventoryStock> stocks)
+    {
+        _invoices = invoices;
+        _products = products;
+        _stocks = stocks;
+    }
+
+    public async Task<SaleInvoiceForEditDto> Handle(GetSaleInvoiceForEditQuery request, CancellationToken cancellationToken)
+    {
+        var invoice = await _invoices.Query()
+            .Include(x => x.Customer)
+            .Include(x => x.Items)
+            .Include(x => x.Payments)
+            .FirstOrDefaultAsync(x => x.Id == request.SalesInvoiceId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Sales invoice {request.SalesInvoiceId} not found.");
+
+        var productIds = invoice.Items.Select(x => x.ProductId).Distinct().ToList();
+        var products = await _products.Query()
+            .Include(x => x.Category)
+            .Include(x => x.UnitOfMeasure)
+            .Where(x => productIds.Contains(x.Id))
+            .ToDictionaryAsync(x => x.Id, cancellationToken);
+
+        var stocks = await _stocks.Query()
+            .Where(x => x.ShopId == invoice.ShopId && productIds.Contains(x.ProductId))
+            .GroupBy(x => x.ProductId)
+            .ToDictionaryAsync(g => g.Key, g => g.Sum(x => x.QuantityOnHand), cancellationToken);
+
+        var editItems = new List<SaleInvoiceForEditItemDto>();
+        foreach (var item in invoice.Items)
+        {
+            products.TryGetValue(item.ProductId, out var prod);
+            stocks.TryGetValue(item.ProductId, out var stockQty);
+            editItems.Add(new SaleInvoiceForEditItemDto(
+                item.ProductId,
+                item.ProductVariantId,
+                prod?.Sku ?? "SKU",
+                prod?.Barcode,
+                prod?.Name ?? item.Description,
+                prod?.Category?.Name ?? "General",
+                prod?.UnitOfMeasure?.Symbol ?? "pc",
+                stockQty,
+                prod?.Mrp ?? item.UnitPrice,
+                item.UnitPrice,
+                item.Quantity,
+                item.DiscountAmount > 0 ? DiscountValueType.FlatAmount : DiscountValueType.Percentage,
+                item.DiscountAmount,
+                item.DiscountAmount,
+                item.TaxRate,
+                item.TaxAmount,
+                item.LineTotal,
+                prod?.HsnSacCode,
+                prod?.Category?.CategoryType ?? CategoryType.General,
+                prod?.RackLocation,
+                prod?.FoodType ?? FoodType.NotApplicable,
+                prod?.RequiresPrescription ?? false,
+                prod?.WarrantyMonths,
+                prod?.PackageSize,
+                prod?.MinSellingPrice,
+                null,
+                null
+            ));
+        }
+
+        var payment = invoice.Payments.FirstOrDefault();
+        var totals = new BillTotalsDto(
+            invoice.SubTotal,
+            invoice.ItemDiscountTotal,
+            invoice.BillDiscountAmount,
+            invoice.CouponDiscountAmount,
+            invoice.TaxableAmount,
+            invoice.TaxTotal,
+            invoice.TaxTotal / 2,
+            invoice.TaxTotal / 2,
+            0,
+            invoice.RoundOff,
+            invoice.GrandTotal,
+            payment?.Amount ?? invoice.GrandTotal,
+            Math.Max(0, (payment?.Amount ?? invoice.GrandTotal) - invoice.GrandTotal)
+        );
+
+        return new SaleInvoiceForEditDto(
+            invoice.Id,
+            invoice.ShopId,
+            invoice.InvoiceNumber,
+            invoice.InvoiceDate,
+            invoice.Status,
+            invoice.CustomerId,
+            invoice.Customer?.Name,
+            invoice.Customer?.Phone,
+            invoice.Customer == null ? invoice.Notes : null,
+            invoice.BillDiscountType,
+            invoice.BillDiscountValue,
+            invoice.CouponCode,
+            invoice.Notes,
+            payment?.Method,
+            payment?.ReferenceNumber,
+            payment?.Amount ?? invoice.GrandTotal,
+            editItems,
+            totals
+        );
+    }
+}
+
+public sealed class AlterSaleInvoiceCommandHandler : IRequestHandler<AlterSaleInvoiceCommand, SaleInvoiceDetailDto>
+{
+    private readonly IRepository<SalesInvoice> _invoices;
+    private readonly IRepository<SalesInvoiceItem> _invoiceItems;
+    private readonly IRepository<Payment> _payments;
+    private readonly IRepository<Product> _products;
+    private readonly IRepository<InventoryStock> _stocks;
+    private readonly IRepository<InventoryMovement> _movements;
+    private readonly IRepository<Coupon> _coupons;
+    private readonly IRepository<Shop> _shops;
+    private readonly IRepository<ShopSetting> _settings;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IMapper _mapper;
+
+    public AlterSaleInvoiceCommandHandler(
+        IRepository<SalesInvoice> invoices,
+        IRepository<SalesInvoiceItem> invoiceItems,
+        IRepository<Payment> payments,
+        IRepository<Product> products,
+        IRepository<InventoryStock> stocks,
+        IRepository<InventoryMovement> movements,
+        IRepository<Coupon> coupons,
+        IRepository<Shop> shops,
+        IRepository<ShopSetting> settings,
+        IUnitOfWork unitOfWork,
+        IMapper mapper)
+    {
+        _invoices = invoices;
+        _invoiceItems = invoiceItems;
+        _payments = payments;
+        _products = products;
+        _stocks = stocks;
+        _movements = movements;
+        _coupons = coupons;
+        _shops = shops;
+        _settings = settings;
+        _unitOfWork = unitOfWork;
+        _mapper = mapper;
+    }
+
+    public async Task<SaleInvoiceDetailDto> Handle(AlterSaleInvoiceCommand request, CancellationToken cancellationToken)
+    {
+        if (request.Request.Items.Count == 0)
+            throw new InvalidOperationException("At least one invoice item is required.");
+
+        var invoice = await _invoices.Query()
+            .Include(x => x.Items)
+            .Include(x => x.Payments)
+            .FirstOrDefaultAsync(x => x.Id == request.SalesInvoiceId, cancellationToken)
+            ?? throw new KeyNotFoundException($"Sales invoice {request.SalesInvoiceId} not found.");
+
+        if (invoice.Status == SalesInvoiceStatus.Cancelled)
+            throw new InvalidOperationException("Cannot alter a cancelled invoice.");
+
+        // 1. If previously Confirmed, reverse stock from previous items
+        if (invoice.Status == SalesInvoiceStatus.Confirmed)
+        {
+            var oldProductIds = invoice.Items.Select(x => x.ProductId).Distinct().ToList();
+            var oldProducts = await _products.Query().Where(x => oldProductIds.Contains(x.Id)).ToDictionaryAsync(x => x.Id, cancellationToken);
+            foreach (var oldItem in invoice.Items)
+            {
+                if (oldProducts.TryGetValue(oldItem.ProductId, out var oldProd) && oldProd.IsStockTracked)
+                {
+                    var stock = await _stocks.Query().FirstOrDefaultAsync(
+                        x => x.ShopId == invoice.ShopId && x.ProductId == oldItem.ProductId && x.ProductVariantId == oldItem.ProductVariantId,
+                        cancellationToken);
+                    if (stock is not null)
+                    {
+                        stock.QuantityOnHand += oldItem.Quantity;
+                        stock.LastMovementAt = DateTimeOffset.UtcNow;
+                    }
+
+                    await _movements.AddAsync(new InventoryMovement
+                    {
+                        ShopId = invoice.ShopId,
+                        ProductId = oldItem.ProductId,
+                        ProductVariantId = oldItem.ProductVariantId,
+                        MovementType = StockMovementType.Adjustment,
+                        Quantity = oldItem.Quantity,
+                        UnitCost = oldProd.CostPrice,
+                        ReferenceType = nameof(SalesInvoice),
+                        ReferenceId = invoice.Id,
+                        Notes = $"Bill Alteration Reversal: #{invoice.InvoiceNumber}"
+                    }, cancellationToken);
+                }
+            }
+        }
+
+        // 2. Calculate new totals
+        var amountTendered = request.Request.Payments.Sum(x => x.Amount);
+        var calculation = await BillingCalculator.CalculateAsync(
+            _products, _coupons, _shops, _settings, invoice.ShopId, request.Request.Items,
+            request.Request.BillDiscountType, request.Request.BillDiscountValue, request.Request.CouponCode,
+            false, amountTendered, cancellationToken);
+
+        // 3. Update invoice header
+        invoice.CustomerId = request.Request.CustomerId;
+        invoice.Status = request.Request.Confirm ? SalesInvoiceStatus.Confirmed : SalesInvoiceStatus.Draft;
+        invoice.PaymentStatus = amountTendered >= calculation.Totals.GrandTotal ? PaymentStatus.Paid : amountTendered > 0 ? PaymentStatus.Partial : PaymentStatus.Pending;
+        invoice.SubTotal = calculation.Totals.SubTotal;
+        invoice.ItemDiscountTotal = calculation.Totals.ItemDiscountTotal;
+        invoice.BillDiscountType = request.Request.BillDiscountType;
+        invoice.BillDiscountValue = request.Request.BillDiscountValue;
+        invoice.BillDiscountAmount = calculation.Totals.BillDiscountAmount;
+        invoice.CouponCode = calculation.Coupon?.IsValid == true ? calculation.Coupon.Code : null;
+        invoice.CouponDiscountAmount = calculation.Totals.CouponDiscountAmount;
+        invoice.DiscountTotal = calculation.Totals.ItemDiscountTotal + calculation.Totals.BillDiscountAmount + calculation.Totals.CouponDiscountAmount;
+        invoice.TaxableAmount = calculation.Totals.TaxableAmount;
+        invoice.TaxTotal = calculation.Totals.TaxTotal;
+        invoice.RoundOff = calculation.Totals.RoundOff;
+        invoice.GrandTotal = calculation.Totals.GrandTotal;
+        invoice.Notes = string.IsNullOrWhiteSpace(request.Request.WalkInCustomerName) ? request.Request.Notes : $"Walk-in: {request.Request.WalkInCustomerName}. {request.Request.Notes}".Trim();
+        invoice.UpdatedAt = DateTimeOffset.UtcNow;
+
+        // 4. Soft-delete previous items
+        foreach (var existingItem in invoice.Items)
+        {
+            existingItem.IsDeleted = true;
+            existingItem.DeletedAt = DateTimeOffset.UtcNow;
+        }
+
+        foreach (var line in calculation.Lines)
+        {
+            var newItem = new SalesInvoiceItem
+            {
+                SalesInvoiceId = invoice.Id,
+                ProductId = line.Request.ProductId,
+                ProductVariantId = line.Request.ProductVariantId,
+                Description = line.Product.Name,
+                Quantity = line.Request.Quantity,
+                UnitPrice = line.Request.UnitPrice,
+                DiscountAmount = line.ItemDiscountAmount,
+                TaxRate = line.TaxRate,
+                TaxAmount = line.TaxAmount,
+                LineTotal = line.LineTotal
+            };
+            await _invoiceItems.AddAsync(newItem, cancellationToken);
+            invoice.Items.Add(newItem);
+
+            // 5. If now Confirmed, deduct stock for new items
+            if (request.Request.Confirm && line.Product.IsStockTracked)
+            {
+                var stock = await _stocks.Query().FirstOrDefaultAsync(
+                    x => x.ShopId == invoice.ShopId && x.ProductId == line.Product.Id && x.ProductVariantId == line.Request.ProductVariantId,
+                    cancellationToken);
+                if (stock is not null)
+                {
+                    stock.QuantityOnHand -= line.Request.Quantity;
+                    stock.LastMovementAt = DateTimeOffset.UtcNow;
+                }
+
+                await _movements.AddAsync(new InventoryMovement
+                {
+                    ShopId = invoice.ShopId,
+                    ProductId = line.Product.Id,
+                    ProductVariantId = line.Request.ProductVariantId,
+                    MovementType = StockMovementType.Sale,
+                    Quantity = line.Request.Quantity,
+                    UnitCost = line.Product.CostPrice,
+                    ReferenceType = nameof(SalesInvoice),
+                    ReferenceId = invoice.Id,
+                    Notes = $"Bill Alteration: #{invoice.InvoiceNumber}"
+                }, cancellationToken);
+            }
+        }
+
+        // 6. Soft-delete previous payments
+        foreach (var existingPayment in invoice.Payments)
+        {
+            existingPayment.IsDeleted = true;
+            existingPayment.DeletedAt = DateTimeOffset.UtcNow;
+        }
+
+        foreach (var payment in request.Request.Payments.Where(x => x.Amount > 0))
+        {
+            var newPayment = new Payment
+            {
+                SalesInvoiceId = invoice.Id,
+                ShopId = invoice.ShopId,
+                Method = payment.Method,
+                Amount = payment.Amount,
+                ReferenceNumber = payment.ReferenceNumber,
+                Details = payment.Details
+            };
+            await _payments.AddAsync(newPayment, cancellationToken);
+            invoice.Payments.Add(newPayment);
+        }
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return new SaleInvoiceDetailDto(
+            _mapper.Map<SalesInvoiceDto>(invoice),
+            _mapper.Map<IReadOnlyList<SalesInvoiceItemDto>>(invoice.Items.Where(x => !x.IsDeleted).ToList()),
+            _mapper.Map<IReadOnlyList<PaymentDto>>(invoice.Payments.Where(x => !x.IsDeleted).ToList()),
+            calculation.Totals,
+            calculation.TaxBreakup);
+    }
+}
+
+public sealed class DeleteDraftSalesInvoiceCommandHandler : IRequestHandler<DeleteDraftSalesInvoiceCommand, bool>
+{
+    private readonly IRepository<SalesInvoice> _invoices;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public DeleteDraftSalesInvoiceCommandHandler(IRepository<SalesInvoice> invoices, IUnitOfWork unitOfWork)
+    {
+        _invoices = invoices;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<bool> Handle(DeleteDraftSalesInvoiceCommand request, CancellationToken cancellationToken)
+    {
+        var invoice = await _invoices.GetByIdAsync(request.SalesInvoiceId, cancellationToken);
+        if (invoice is null) return false;
+        if (invoice.Status != SalesInvoiceStatus.Draft)
+            throw new InvalidOperationException("Only draft invoices can be discarded.");
+
+        _invoices.Delete(invoice);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        return true;
+    }
 }

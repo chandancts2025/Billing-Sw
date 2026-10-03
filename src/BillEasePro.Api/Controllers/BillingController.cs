@@ -42,6 +42,18 @@ public sealed class BillingController : ControllerBase
     public Task<SaleInvoiceDetailDto> CreateSaleInvoice(CreateSaleInvoiceRequest request, CancellationToken cancellationToken)
         => _mediator.Send(new CreateSaleInvoiceCommand(request), cancellationToken);
 
+    [HttpGet("sales/{salesInvoiceId:guid}")]
+    public Task<SaleInvoiceForEditDto> GetSaleInvoice(Guid salesInvoiceId, CancellationToken cancellationToken)
+        => _mediator.Send(new GetSaleInvoiceForEditQuery(salesInvoiceId), cancellationToken);
+
+    [HttpPut("sales/{salesInvoiceId:guid}")]
+    public Task<SaleInvoiceDetailDto> AlterSaleInvoice(Guid salesInvoiceId, CreateSaleInvoiceRequest request, CancellationToken cancellationToken)
+        => _mediator.Send(new AlterSaleInvoiceCommand(salesInvoiceId, request), cancellationToken);
+
+    [HttpDelete("sales/{salesInvoiceId:guid}")]
+    public Task<bool> DeleteDraftSalesInvoice(Guid salesInvoiceId, CancellationToken cancellationToken)
+        => _mediator.Send(new DeleteDraftSalesInvoiceCommand(salesInvoiceId), cancellationToken);
+
     [HttpGet("sales/history")]
     public Task<IReadOnlyList<BillHistoryRowDto>> History(
         Guid shopId,

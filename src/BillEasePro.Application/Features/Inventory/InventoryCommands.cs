@@ -54,7 +54,7 @@ public sealed class InventoryLookupQueryHandler : IRequestHandler<InventoryLooku
     public async Task<InventoryLookupDto> Handle(InventoryLookupQuery request, CancellationToken cancellationToken)
     {
         var categories = await _categories.Query().Where(x => x.ShopId == request.ShopId).OrderBy(x => x.DisplayOrder).ThenBy(x => x.Name)
-            .Select(x => new CategoryDto(x.Id, x.ShopId, x.Name, x.Description, x.ParentCategoryId)).ToListAsync(cancellationToken);
+            .Select(x => new CategoryDto(x.Id, x.ShopId, x.Name, x.Description, x.ParentCategoryId, x.CategoryType)).ToListAsync(cancellationToken);
         var units = await _units.Query().OrderBy(x => x.Name).Select(x => new UnitOfMeasureDto(x.Id, x.Name, x.Symbol, x.UnitType)).ToListAsync(cancellationToken);
         var slabs = await _taxSlabs.Query().Where(x => x.IsActive).OrderBy(x => x.Rate).Select(x => new TaxSlabDto(x.Id, x.Name, x.Rate, x.TaxRegime, x.IsActive)).ToListAsync(cancellationToken);
         var suppliers = await _suppliers.Query().Where(x => x.ShopId == request.ShopId).OrderBy(x => x.Name).Select(x => new SupplierSummaryDto(x.Id, x.Name, x.Phone, x.Email, x.OutstandingBalance)).ToListAsync(cancellationToken);
@@ -90,7 +90,25 @@ public sealed class InventoryProductsQueryHandler : IRequestHandler<InventoryPro
         return products.Select(product =>
         {
             var qty = stock.FirstOrDefault(x => x.ProductId == product.Id)?.Qty ?? 0;
-            return new InventoryProductListItemDto(product.Id, product.Sku, product.Name, product.Category?.Name ?? string.Empty, product.Brand, product.UnitOfMeasure?.Symbol ?? "pc", qty, product.CostPrice, product.SellingPrice, product.Mrp, product.WholesalePrice, product.TaxSlab?.Rate ?? 0, product.IsTaxInclusive, product.ExpiryTracking, product.IsActive, product.IsFeatured);
+            return new InventoryProductListItemDto(
+                product.Id,
+                product.Sku,
+                product.Name,
+                product.Category?.Name ?? string.Empty,
+                product.Brand,
+                product.UnitOfMeasure?.Symbol ?? "pc",
+                qty,
+                product.CostPrice,
+                product.SellingPrice,
+                product.Mrp,
+                product.WholesalePrice,
+                product.TaxSlab?.Rate ?? 0,
+                product.IsTaxInclusive,
+                product.ExpiryTracking,
+                product.IsActive,
+                product.IsFeatured,
+                product.Category?.CategoryType ?? CategoryType.General,
+                product.RackLocation);
         }).ToList();
     }
 }
@@ -176,6 +194,49 @@ public sealed class SaveInventoryProductCommandHandler : IRequestHandler<SaveInv
         product.IsActive = request.IsActive;
         product.IsFeatured = request.IsFeatured;
         product.IsStockTracked = true;
+
+        // Universal Supermarket & Locators
+        product.RackLocation = EmptyToNull(request.RackLocation);
+        product.SecondaryBarcodes = EmptyToNull(request.SecondaryBarcodes);
+        product.MinSellingPrice = request.MinSellingPrice ?? 0;
+
+        // Groceries
+        product.PackageSize = EmptyToNull(request.PackageSize);
+        product.NetWeight = request.NetWeight;
+        product.WeightUnit = EmptyToNull(request.WeightUnit);
+        product.IsWeighingScaleItem = request.IsWeighingScaleItem;
+        product.PluCode = EmptyToNull(request.PluCode);
+        product.FssaiLicenseNo = EmptyToNull(request.FssaiLicenseNo);
+        product.ShelfLifeDays = request.ShelfLifeDays;
+        product.StorageTemperature = EmptyToNull(request.StorageTemperature);
+        product.IsOrganic = request.IsOrganic;
+        product.IsPerishable = request.IsPerishable;
+        product.CountryOfOrigin = EmptyToNull(request.CountryOfOrigin);
+
+        // Electronics
+        product.IsSerialTracked = request.IsSerialTracked;
+        product.WarrantyMonths = request.WarrantyMonths;
+        product.WarrantyType = EmptyToNull(request.WarrantyType);
+        product.ModelNumber = EmptyToNull(request.ModelNumber);
+        product.PartNumber = EmptyToNull(request.PartNumber);
+        product.TechnicalSpecifications = EmptyToNull(request.TechnicalSpecifications);
+        product.ReturnWindowDays = request.ReturnWindowDays;
+
+        // Pharmacy
+        product.DrugSchedule = EmptyToNull(request.DrugSchedule);
+        product.DosageForm = EmptyToNull(request.DosageForm);
+        product.PackagingDetails = EmptyToNull(request.PackagingDetails);
+        product.IsNarcotic = request.IsNarcotic;
+        product.StorageCondition = EmptyToNull(request.StorageCondition);
+
+        // Fashion
+        product.GenderTarget = EmptyToNull(request.GenderTarget);
+        product.MaterialFabric = EmptyToNull(request.MaterialFabric);
+        product.FitType = EmptyToNull(request.FitType);
+        product.Season = EmptyToNull(request.Season);
+        product.StyleCode = EmptyToNull(request.StyleCode);
+        product.CustomAttributesJson = EmptyToNull(request.CustomAttributesJson);
+
         if (!string.IsNullOrWhiteSpace(request.Sku)) product.Sku = request.Sku.Trim();
 
         foreach (var variantRequest in request.Variants)
@@ -261,13 +322,14 @@ public sealed class CategoryHandlers :
         category.ImageUrl = request.ImageUrl;
         category.ColorHex = request.ColorHex;
         category.DisplayOrder = request.DisplayOrder;
+        category.CategoryType = request.CategoryType;
         if (!request.Id.HasValue) await _categories.AddAsync(category, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return new CategoryDto(category.Id, category.ShopId, category.Name, category.Description, category.ParentCategoryId);
+        return new CategoryDto(category.Id, category.ShopId, category.Name, category.Description, category.ParentCategoryId, category.CategoryType);
     }
 
     private static CategoryTreeNodeDto ToNode(Category category, IReadOnlyList<Category> all)
-        => new(category.Id, category.Name, category.Description, category.ImageUrl, category.ColorHex, category.DisplayOrder, all.Where(x => x.ParentCategoryId == category.Id).OrderBy(x => x.DisplayOrder).Select(x => ToNode(x, all)).ToList());
+        => new(category.Id, category.Name, category.Description, category.ImageUrl, category.ColorHex, category.DisplayOrder, all.Where(x => x.ParentCategoryId == category.Id).OrderBy(x => x.DisplayOrder).Select(x => ToNode(x, all)).ToList(), category.CategoryType);
 }
 
 public sealed class InventoryDashboardQueryHandler : IRequestHandler<InventoryDashboardQuery, InventoryDashboardDto>
@@ -784,7 +846,12 @@ internal static class InventoryMapper
 {
     public static InventoryProductDetailDto ToProductDetail(Product product, decimal openingStock)
         => new(product.Id, product.ShopId, product.Name, product.Sku, product.Barcode, product.CategoryId, product.Category?.ParentCategoryId, product.SubCategory, product.Brand, product.HsnSacCode, product.UnitOfMeasureId, product.TaxSlabId, product.CostPrice, product.SellingPrice, product.Mrp, product.WholesalePrice, product.LowStockThreshold, product.MaxStockThreshold, openingStock, product.ReorderQuantity, product.IsTaxInclusive, product.IsStockTracked, product.ExpiryTracking, product.BatchTracking, product.RequiresPrescription, product.Composition, product.Manufacturer, product.FoodType, product.PreparationTimeMinutes, product.RecipeCost, product.PortionSize, product.ImageUrl, product.IsActive, product.IsFeatured,
-            product.Variants.Select(x => new InventoryVariantDto(x.Id, x.VariantName, x.Sku, x.Size, x.Color, x.CostPrice, x.SellingPrice, x.Mrp, x.IsActive)).ToList());
+            product.Variants.Select(x => new InventoryVariantDto(x.Id, x.VariantName, x.Sku, x.Size, x.Color, x.CostPrice, x.SellingPrice, x.Mrp, x.IsActive)).ToList(),
+            product.RackLocation, product.SecondaryBarcodes, product.MinSellingPrice, product.Category?.CategoryType ?? CategoryType.General,
+            product.PackageSize, product.NetWeight, product.WeightUnit, product.IsWeighingScaleItem, product.PluCode, product.FssaiLicenseNo, product.ShelfLifeDays, product.StorageTemperature, product.IsOrganic, product.IsPerishable, product.CountryOfOrigin,
+            product.IsSerialTracked, product.WarrantyMonths, product.WarrantyType, product.ModelNumber, product.PartNumber, product.TechnicalSpecifications, product.ReturnWindowDays,
+            product.DrugSchedule, product.DosageForm, product.PackagingDetails, product.IsNarcotic, product.StorageCondition,
+            product.GenderTarget, product.MaterialFabric, product.FitType, product.Season, product.StyleCode, product.CustomAttributesJson);
 
     public static SupplierDetailDto ToSupplierDetail(Supplier supplier)
         => new(supplier.Id, supplier.ShopId, supplier.Name, supplier.ContactPerson, supplier.Phone, supplier.Email, supplier.TaxRegistrationNumber, supplier.Pan, supplier.Address, supplier.BankDetails, supplier.CreditDays, supplier.PaymentTerms, supplier.OpeningBalance, supplier.OutstandingBalance);

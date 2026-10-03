@@ -1,7 +1,7 @@
 import { Gender, UserRole } from '../../core/auth/auth.models';
 
 export type SettingsSectionKey = 'shop' | 'taxes' | 'discounts' | 'coupons' | 'users' | 'general';
-export type ShopType = 'Pharmacy' | 'Grocery' | 'Fashion' | 'Restaurant' | 'Hotel' | 'Electronics' | 'Hardware' | 'General';
+export type ShopType = 'Supermarket' | 'Grocery' | 'Electronics' | 'Fashion' | 'Pharmacy' | 'Restaurant' | 'Hotel' | 'Hardware' | 'General';
 export type TaxRegime = 'GST' | 'VAT' | 'Sales Tax' | 'No Tax';
 export type GstMode = 'Exclusive' | 'Inclusive';
 export type CouponType = 'Percentage' | 'Flat';

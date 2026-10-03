@@ -84,6 +84,7 @@ import { BillHistoryRowDto, PaymentMethod, PrintInvoiceDto, SalesInvoiceStatus }
                 <td><span class="status" [class.cancelled]="row.status === 'Cancelled'">{{ row.status }}</span></td>
                 <td class="actions">
                   <button mat-icon-button type="button" title="View invoice" (click)="view(row)"><mat-icon>visibility</mat-icon></button>
+                  <button mat-icon-button type="button" title="Alter / Edit Bill" (click)="alterBill(row)"><mat-icon>edit_note</mat-icon></button>
                   <button mat-icon-button type="button" title="Reprint" (click)="reprint(row)"><mat-icon>print</mat-icon></button>
                   <button mat-icon-button type="button" title="Return" (click)="returnBill(row)"><mat-icon>assignment_return</mat-icon></button>
                 </td>
@@ -163,6 +164,10 @@ export class BillingHistoryComponent {
 
   reprint(row: BillHistoryRowDto): void {
     this.billing.printInvoice(row.id).subscribe(print => this.openPrint(print.a4Html));
+  }
+
+  alterBill(row: BillHistoryRowDto): void {
+    void this.router.navigate(['/billing/new'], { queryParams: { alterInvoiceId: row.id } });
   }
 
   returnBill(row: BillHistoryRowDto): void {

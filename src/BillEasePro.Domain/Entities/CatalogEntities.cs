@@ -49,6 +49,7 @@ public sealed class Category : BaseAuditableEntity
     public int DisplayOrder { get; set; }
     public string? ImageUrl { get; set; }
     public string? ColorHex { get; set; }
+    public CategoryType CategoryType { get; set; } = CategoryType.General;
 }
 
 public sealed class Product : BaseAuditableEntity
@@ -72,6 +73,7 @@ public sealed class Product : BaseAuditableEntity
     public decimal SellingPrice { get; set; }
     public decimal Mrp { get; set; }
     public decimal WholesalePrice { get; set; }
+    public decimal MinSellingPrice { get; set; }
     public decimal LowStockThreshold { get; set; }
     public decimal MaxStockThreshold { get; set; }
     public decimal ReorderQuantity { get; set; }
@@ -89,6 +91,50 @@ public sealed class Product : BaseAuditableEntity
     public string? PortionSize { get; set; }
     public string? ImageUrl { get; set; }
     public bool IsActive { get; set; } = true;
+
+    // Supermarket Physical Store Locator & Multi-Barcodes
+    public string? RackLocation { get; set; }
+    public string? SecondaryBarcodes { get; set; }
+
+    // Groceries / FMCG / Fresh Produce
+    public string? PackageSize { get; set; }
+    public decimal? NetWeight { get; set; }
+    public string? WeightUnit { get; set; }
+    public bool IsWeighingScaleItem { get; set; }
+    public string? PluCode { get; set; }
+    public string? FssaiLicenseNo { get; set; }
+    public int? ShelfLifeDays { get; set; }
+    public string? StorageTemperature { get; set; }
+    public bool IsOrganic { get; set; }
+    public bool IsPerishable { get; set; }
+    public string? CountryOfOrigin { get; set; }
+
+    // Electronics & Mobile
+    public bool IsSerialTracked { get; set; }
+    public int? WarrantyMonths { get; set; }
+    public string? WarrantyType { get; set; }
+    public string? ModelNumber { get; set; }
+    public string? PartNumber { get; set; }
+    public string? TechnicalSpecifications { get; set; }
+    public int? ReturnWindowDays { get; set; }
+
+    // Pharmacy & Healthcare
+    public string? DrugSchedule { get; set; }
+    public string? DosageForm { get; set; }
+    public string? PackagingDetails { get; set; }
+    public bool IsNarcotic { get; set; }
+    public string? StorageCondition { get; set; }
+
+    // Fashion & Apparel
+    public string? GenderTarget { get; set; }
+    public string? MaterialFabric { get; set; }
+    public string? FitType { get; set; }
+    public string? Season { get; set; }
+    public string? StyleCode { get; set; }
+
+    // Dynamic Extension Attributes
+    public string? CustomAttributesJson { get; set; }
+
     public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
 }
 

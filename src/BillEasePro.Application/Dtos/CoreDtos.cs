@@ -5,12 +5,19 @@ namespace BillEasePro.Application.Dtos;
 public sealed record ShopDto(Guid Id, string Name, string? LegalName, string? TaxRegistrationNumber, IndustryType IndustryType, TaxRegime TaxRegime, string CurrencyCode, string? LogoUrl, string AddressLine1, string? AddressLine2, string City, string State, string PostalCode, string Country, string Phone, string Email);
 public sealed record ShopSettingsDto(Guid ShopId, string ShopName, string BrandColor, bool DarkModeEnabled, int IdleTimeoutMinutes, bool PreventMultipleOperatorSessions);
 public sealed record UserDto(Guid Id, Guid ShopId, string FullName, string Email, string? Phone, UserRole Role, bool IsActive, bool TwoFactorEnabled);
-public sealed record CategoryDto(Guid Id, Guid ShopId, string Name, string? Description, Guid? ParentCategoryId);
+public sealed record CategoryDto(Guid Id, Guid ShopId, string Name, string? Description, Guid? ParentCategoryId, CategoryType CategoryType = CategoryType.General);
 public sealed record UnitOfMeasureDto(Guid Id, string Name, string Symbol, UnitType UnitType);
 public sealed record TaxSlabDto(Guid Id, string Name, decimal Rate, TaxRegime TaxRegime, bool IsActive);
 public sealed record DiscountTypeDto(Guid Id, string Name, DiscountValueType ValueType, decimal DefaultValue, bool IsActive);
 public sealed record UnitConversionCoreDto(Guid Id, Guid ShopId, Guid BaseUnitId, Guid AlternateUnitId, decimal Factor, bool IsActive);
-public sealed record ProductDto(Guid Id, Guid ShopId, Guid CategoryId, Guid UnitOfMeasureId, Guid TaxSlabId, string Sku, string Name, string? Barcode, string? HsnSacCode, bool IsStockTracked, decimal CostPrice, decimal SellingPrice, decimal Mrp, decimal LowStockThreshold, bool IsActive);
+public sealed record ProductDto(
+    Guid Id, Guid ShopId, Guid CategoryId, Guid UnitOfMeasureId, Guid TaxSlabId, string Sku, string Name, string? Barcode, string? HsnSacCode, bool IsStockTracked, decimal CostPrice, decimal SellingPrice, decimal Mrp, decimal LowStockThreshold, bool IsActive,
+    string? SubCategory = null, string? Brand = null, decimal WholesalePrice = 0, decimal MinSellingPrice = 0, decimal MaxStockThreshold = 0, decimal ReorderQuantity = 0, bool IsTaxInclusive = false, bool IsFeatured = false, bool ExpiryTracking = false, bool BatchTracking = false,
+    string? RackLocation = null, string? SecondaryBarcodes = null, string? PackageSize = null, decimal? NetWeight = null, string? WeightUnit = null, bool IsWeighingScaleItem = false, string? PluCode = null, string? FssaiLicenseNo = null, int? ShelfLifeDays = null, string? StorageTemperature = null, bool IsOrganic = false, bool IsPerishable = false, string? CountryOfOrigin = null,
+    bool IsSerialTracked = false, int? WarrantyMonths = null, string? WarrantyType = null, string? ModelNumber = null, string? PartNumber = null, string? TechnicalSpecifications = null, int? ReturnWindowDays = null,
+    bool RequiresPrescription = false, string? DrugSchedule = null, string? Composition = null, string? DosageForm = null, string? PackagingDetails = null, string? Manufacturer = null, bool IsNarcotic = false, string? StorageCondition = null,
+    string? GenderTarget = null, string? MaterialFabric = null, string? FitType = null, string? Season = null, string? StyleCode = null,
+    FoodType FoodType = FoodType.NotApplicable, int? PreparationTimeMinutes = null, decimal RecipeCost = 0, string? PortionSize = null, string? ImageUrl = null, string? CustomAttributesJson = null);
 public sealed record ProductVariantDto(Guid Id, Guid ProductId, string VariantName, string? AttributeJson, string Sku, decimal SellingPrice);
 public sealed record InventoryStockDto(Guid Id, Guid ShopId, Guid ProductId, Guid? ProductVariantId, decimal QuantityOnHand, decimal QuantityReserved, decimal ReorderLevel);
 public sealed record InventoryMovementDto(Guid Id, Guid ShopId, Guid ProductId, Guid? ProductVariantId, StockMovementType MovementType, decimal Quantity, decimal UnitCost, string ReferenceType, Guid? ReferenceId, string? Notes);

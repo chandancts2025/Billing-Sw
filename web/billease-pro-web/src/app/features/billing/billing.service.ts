@@ -20,7 +20,8 @@ import {
   ConfirmSalesInvoiceRequest,
   CancelSalesInvoiceRequest,
   ReturnSalesInvoiceRequest,
-  PrintSalesInvoiceResponse
+  PrintSalesInvoiceResponse,
+  SaleInvoiceForEditDto
 } from './billing.models';
 
 @Injectable({ providedIn: 'root' })
@@ -109,5 +110,32 @@ export class BillingService {
 
   createReturn(payload: { salesInvoiceId: string; items: { salesInvoiceItemId: string; quantity: number; refundAmount: number }[]; reason: string; refundMode: string }) {
     return this.http.post<SalesReturnDto>(`${this.base}/returns`, payload);
+  }
+
+  getSaleInvoice(id: string) {
+    return this.http.get<SaleInvoiceForEditDto>(`${this.base}/sales/${id}`);
+  }
+
+  alterSale(id: string, payload: {
+    shopId: string;
+    customerId?: string | null;
+    walkInCustomerName?: string | null;
+    items: CreateSaleInvoiceItemRequest[];
+    billDiscountType?: DiscountValueType | null;
+    billDiscountValue: number;
+    couponCode?: string | null;
+    payments: CreatePaymentRequest[];
+    confirm: boolean;
+    notes?: string | null;
+  }) {
+    return this.http.put<SaleInvoiceDetailDto>(`${this.base}/sales/${id}`, payload);
+  }
+
+  deleteDraft(id: string) {
+    return this.http.delete<boolean>(`${this.base}/sales/${id}`);
+  }
+
+  getDrafts(shopId: string) {
+    return this.history(shopId, { status: 'Draft' });
   }
 }

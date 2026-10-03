@@ -11,7 +11,13 @@ export class BillingApiService extends ApiService {
   confirmBill(id: string) { return this.http.post(this.url(`billing/sales/${id}/confirm`), {}); }
   calculateTotals(payload: unknown) { return this.http.post<BillQuoteDto>(this.url('billing/quote'), payload); }
   applyCoupon(payload: unknown) { return this.http.post(this.url('billing/coupon/validate'), payload); }
-  getHistory(shopId: string) { return this.http.get<BillHistoryRowDto[]>(this.url('billing/sales/history'), { params: this.params({ shopId }) }); }
+  getHistory(shopIdOrParams: string | { shopId: string; customerId?: string; from?: string; to?: string; paymentMode?: string; status?: string; search?: string }) {
+    const params = typeof shopIdOrParams === 'string' ? { shopId: shopIdOrParams } : shopIdOrParams;
+    return this.http.get<BillHistoryRowDto[]>(this.url('billing/sales/history'), { params: this.params(params) });
+  }
+  billHistory(params: { shopId: string; customerId?: string; from?: string; to?: string; paymentMode?: string; status?: string; search?: string }) {
+    return this.getHistory(params);
+  }
   printBill(id: string) { return this.http.get<PrintInvoiceDto>(this.url(`billing/sales/${id}/print`)); }
   searchProducts(shopId: string, term: string) { return this.http.get<ProductSearchResultDto[]>(this.url('billing/products/search'), { params: this.params({ shopId, term }) }); }
 }

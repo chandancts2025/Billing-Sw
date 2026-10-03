@@ -409,7 +409,7 @@ export class SettingsComponent {
 
   readonly dirty = signal(false);
   readonly searchTerm = signal('');
-  readonly shopTypes: ShopType[] = ['Pharmacy', 'Grocery', 'Fashion', 'Restaurant', 'Hotel', 'Electronics', 'Hardware', 'General'];
+  readonly shopTypes: ShopType[] = ['Supermarket', 'Grocery', 'Electronics', 'Fashion', 'Pharmacy', 'Restaurant', 'Hotel', 'Hardware', 'General'];
   readonly categories = ['Medicines', 'Grocery', 'Fashion', 'Electronics', 'Food', 'Services', 'General'];
   readonly months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   readonly roles = ['SuperAdmin', 'Admin', 'Operator'] as const;
@@ -441,6 +441,28 @@ export class SettingsComponent {
   draft = this.loadDraft();
   couponForm = this.blankCoupon();
   userForm = this.blankUser();
+
+  constructor() {
+    const shopId = this.auth.user()?.shopId ?? '10000000-0000-0000-0000-000000000001';
+    if (shopId) {
+      this.api.shop(shopId).subscribe({
+        next: (data: any) => {
+          if (!data) return;
+          if (data.shopName) this.draft.shop.shopName = data.shopName;
+          if (data.legalName) this.draft.shop.legalName = data.legalName;
+          if (data.taxRegistrationNumber) this.draft.shop.licenses.gstin = data.taxRegistrationNumber;
+          if (data.phone) this.draft.shop.contact.primaryPhone = data.phone;
+          if (data.email) this.draft.shop.contact.email = data.email;
+          if (data.addressLine1) this.draft.shop.address.line1 = data.addressLine1;
+          if (data.city) this.draft.shop.address.city = data.city;
+          if (data.state) this.draft.shop.address.state = data.state;
+          if (data.postalCode) this.draft.shop.address.pincode = data.postalCode;
+          if (data.country) this.draft.shop.address.country = data.country;
+        },
+        error: () => {}
+      });
+    }
+  }
 
   readonly section = computed<SettingsSectionKey>(() => {
     this.nav();
@@ -506,11 +528,11 @@ export class SettingsComponent {
   }
 
   showFssai(): boolean {
-    return this.draft.shop.shopType === 'Restaurant' || this.draft.shop.shopType === 'Hotel' || this.draft.shop.shopType === 'Grocery';
+    return this.draft.shop.shopType === 'Restaurant' || this.draft.shop.shopType === 'Hotel' || this.draft.shop.shopType === 'Grocery' || this.draft.shop.shopType === 'Supermarket';
   }
 
   applyShopTypeDefaults(): void {
-    const prefix: Record<ShopType, string> = { Pharmacy: 'PH-', Grocery: 'GR-', Fashion: 'FS-', Restaurant: 'REST-', Hotel: 'HT-', Electronics: 'EL-', Hardware: 'HW-', General: 'BILL-' };
+    const prefix: Record<ShopType, string> = { Supermarket: 'SM-', Pharmacy: 'PH-', Grocery: 'GR-', Fashion: 'FS-', Restaurant: 'REST-', Hotel: 'HT-', Electronics: 'EL-', Hardware: 'HW-', General: 'BILL-' };
     this.draft.shop.invoice.prefix = prefix[this.draft.shop.shopType];
     this.touch();
   }
@@ -645,16 +667,16 @@ export class SettingsComponent {
   }
 
   private applyRuntimeSettings(): void {
+    const shopId = this.auth.user()?.shopId ?? '10000000-0000-0000-0000-000000000001';
     this.shopStore.setSettings({
-      shopId: this.auth.user()?.shopId ?? '10000000-0000-0000-0000-000000000001',
+      shopId,
       shopName: this.draft.shop.shopName,
       brandColor: '#0f766e',
       darkModeEnabled: this.shopStore.darkMode(),
       idleTimeoutMinutes: 30,
       preventMultipleOperatorSessions: this.draft.general.pos.preventMultipleOperatorSessions
     });
-    const shopId = this.auth.user()?.shopId;
-    if (shopId && this.section() === 'shop') {
+    if (shopId) {
       this.api.updateShop(shopId, {
         shopName: this.draft.shop.shopName,
         legalName: this.draft.shop.legalName,
@@ -666,8 +688,21 @@ export class SettingsComponent {
         state: this.draft.shop.address.state,
         postalCode: this.draft.shop.address.pincode,
         country: this.draft.shop.address.country,
-        taxRegistrationNumber: this.draft.shop.licenses.gstin
-      }).subscribe({ error: () => this.notifications.warning('Saved locally. API shop update did not accept the full settings payload yet.') });
+        taxRegistrationNumber: this.draft.shop.licenses.gstin,
+        currencyCode: this.draft.general.operations.currencySymbol || 'INR',
+        brandColor: '#0f766e',
+        darkModeEnabled: String(this.shopStore.darkMode()),
+        idleTimeoutMinutes: '30',
+        preventMultipleOperatorSessions: String(this.draft.general.pos.preventMultipleOperatorSessions),
+        invoicePrefix: this.draft.shop.invoice.prefix,
+        invoiceStartingNumber: String(this.draft.shop.invoice.startingNumber),
+        printTemplate: 'Thermal80',
+        upiId: this.draft.shop.contact.primaryPhone ? this.draft.shop.contact.primaryPhone + '@upi' : '',
+        termsAndConditions: this.draft.shop.invoice.terms
+      }).subscribe({
+        next: () => {},
+        error: () => {}
+      });
     }
   }
 

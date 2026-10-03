@@ -1,4 +1,5 @@
 using BillEasePro.Domain.Enums;
+using MediatR;
 
 namespace BillEasePro.Application.Dtos;
 
@@ -17,7 +18,29 @@ public sealed record CreateSaleInvoiceRequest(
 public sealed record CreateSaleInvoiceItemRequest(Guid ProductId, Guid? ProductVariantId, decimal Quantity, decimal UnitPrice, DiscountValueType? DiscountType, decimal DiscountValue, decimal TaxRate);
 public sealed record CreatePaymentRequest(PaymentMethod Method, decimal Amount, string? ReferenceNumber, string? Details);
 public sealed record SaleInvoiceDetailDto(SalesInvoiceDto Invoice, IReadOnlyList<SalesInvoiceItemDto> Items, IReadOnlyList<PaymentDto> Payments, BillTotalsDto Totals, IReadOnlyList<TaxBreakupDto> TaxBreakup);
-public sealed record ProductSearchResultDto(Guid ProductId, Guid? ProductVariantId, string Sku, string? Barcode, string Name, string Category, string Unit, decimal StockQuantity, decimal Mrp, decimal SellingPrice, decimal TaxRate, string? HsnSacCode, decimal MaxDiscountPercent, bool RequiresBatchSelection, IReadOnlyList<ProductBatchOptionDto> Batches);
+public sealed record ProductSearchResultDto(
+    Guid ProductId,
+    Guid? ProductVariantId,
+    string Sku,
+    string? Barcode,
+    string Name,
+    string Category,
+    string Unit,
+    decimal StockQuantity,
+    decimal Mrp,
+    decimal SellingPrice,
+    decimal TaxRate,
+    string? HsnSacCode,
+    decimal MaxDiscountPercent,
+    bool RequiresBatchSelection,
+    IReadOnlyList<ProductBatchOptionDto> Batches,
+    CategoryType CategoryType = CategoryType.General,
+    string? RackLocation = null,
+    FoodType FoodType = FoodType.NotApplicable,
+    bool RequiresPrescription = false,
+    int? WarrantyMonths = null,
+    string? PackageSize = null,
+    decimal? MinSellingPrice = null);
 public sealed record ProductBatchOptionDto(Guid ProductVariantId, string BatchName, decimal SellingPrice, DateTimeOffset? ExpiryDate, decimal StockQuantity);
 public sealed record CustomerSearchResultDto(Guid Id, string Name, string? Phone, string? Email, decimal LoyaltyPoints, decimal OutstandingBalance, decimal CreditLimit);
 public sealed record AddInlineCustomerRequest(Guid ShopId, string Name, string Phone, string? Email);
@@ -42,3 +65,56 @@ public sealed record ReturnSalesInvoiceRequest(Guid SalesInvoiceId, IReadOnlyLis
 public sealed record ReturnSalesInvoiceItemRequest(Guid SalesInvoiceItemId, decimal Quantity, decimal RefundAmount);
 public sealed record PrintSalesInvoiceRequest(Guid SalesInvoiceId);
 public sealed record PrintSalesInvoiceResponse(string InvoiceNumber, string PrintContent);
+
+public sealed record SaleInvoiceForEditItemDto(
+    Guid ProductId,
+    Guid? ProductVariantId,
+    string Sku,
+    string? Barcode,
+    string Name,
+    string Category,
+    string Unit,
+    decimal StockQuantity,
+    decimal Mrp,
+    decimal UnitPrice,
+    decimal Quantity,
+    DiscountValueType DiscountType,
+    decimal DiscountValue,
+    decimal DiscountAmount,
+    decimal TaxRate,
+    decimal TaxAmount,
+    decimal LineTotal,
+    string? HsnSacCode,
+    CategoryType CategoryType = CategoryType.General,
+    string? RackLocation = null,
+    FoodType FoodType = FoodType.NotApplicable,
+    bool RequiresPrescription = false,
+    int? WarrantyMonths = null,
+    string? PackageSize = null,
+    decimal? MinSellingPrice = null,
+    string? BatchNumber = null,
+    DateTimeOffset? ExpiryDate = null);
+
+public sealed record SaleInvoiceForEditDto(
+    Guid InvoiceId,
+    Guid ShopId,
+    string InvoiceNumber,
+    DateTimeOffset InvoiceDate,
+    SalesInvoiceStatus Status,
+    Guid? CustomerId,
+    string? CustomerName,
+    string? CustomerPhone,
+    string? WalkInCustomerName,
+    DiscountValueType? BillDiscountType,
+    decimal BillDiscountValue,
+    string? CouponCode,
+    string? Notes,
+    PaymentMethod? PaymentMethod,
+    string? PaymentReference,
+    decimal AmountTendered,
+    IReadOnlyList<SaleInvoiceForEditItemDto> Items,
+    BillTotalsDto Totals);
+
+public sealed record GetSaleInvoiceForEditQuery(Guid SalesInvoiceId) : IRequest<SaleInvoiceForEditDto>;
+public sealed record AlterSaleInvoiceCommand(Guid SalesInvoiceId, CreateSaleInvoiceRequest Request) : IRequest<SaleInvoiceDetailDto>;
+public sealed record DeleteDraftSalesInvoiceCommand(Guid SalesInvoiceId) : IRequest<bool>;

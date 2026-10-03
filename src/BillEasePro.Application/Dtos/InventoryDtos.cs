@@ -24,7 +24,9 @@ public sealed record InventoryProductListItemDto(
     bool IsTaxInclusive,
     bool ExpiryTracking,
     bool IsActive,
-    bool IsFeatured);
+    bool IsFeatured,
+    CategoryType CategoryType = CategoryType.General,
+    string? RackLocation = null);
 
 public sealed record InventoryProductDetailDto(
     Guid Id,
@@ -61,7 +63,45 @@ public sealed record InventoryProductDetailDto(
     string? ImageUrl,
     bool IsActive,
     bool IsFeatured,
-    IReadOnlyList<InventoryVariantDto> Variants);
+    IReadOnlyList<InventoryVariantDto> Variants,
+    // Universal Supermarket & Locators
+    string? RackLocation = null,
+    string? SecondaryBarcodes = null,
+    decimal? MinSellingPrice = null,
+    CategoryType CategoryType = CategoryType.General,
+    // Groceries
+    string? PackageSize = null,
+    decimal? NetWeight = null,
+    string? WeightUnit = null,
+    bool IsWeighingScaleItem = false,
+    string? PluCode = null,
+    string? FssaiLicenseNo = null,
+    int? ShelfLifeDays = null,
+    string? StorageTemperature = null,
+    bool IsOrganic = false,
+    bool IsPerishable = false,
+    string? CountryOfOrigin = null,
+    // Electronics
+    bool IsSerialTracked = false,
+    int? WarrantyMonths = null,
+    string? WarrantyType = null,
+    string? ModelNumber = null,
+    string? PartNumber = null,
+    string? TechnicalSpecifications = null,
+    int? ReturnWindowDays = null,
+    // Pharmacy
+    string? DrugSchedule = null,
+    string? DosageForm = null,
+    string? PackagingDetails = null,
+    bool IsNarcotic = false,
+    string? StorageCondition = null,
+    // Fashion
+    string? GenderTarget = null,
+    string? MaterialFabric = null,
+    string? FitType = null,
+    string? Season = null,
+    string? StyleCode = null,
+    string? CustomAttributesJson = null);
 
 public sealed record InventoryVariantDto(Guid Id, string VariantName, string Sku, string? Size, string? Color, decimal CostPrice, decimal SellingPrice, decimal Mrp, bool IsActive);
 
@@ -98,12 +138,49 @@ public sealed record SaveProductRequest(
     string? ImageDataUrl,
     bool IsActive,
     bool IsFeatured,
-    IReadOnlyList<SaveProductVariantRequest> Variants);
+    IReadOnlyList<SaveProductVariantRequest> Variants,
+    // Universal Supermarket & Locators
+    string? RackLocation = null,
+    string? SecondaryBarcodes = null,
+    decimal? MinSellingPrice = null,
+    // Groceries
+    string? PackageSize = null,
+    decimal? NetWeight = null,
+    string? WeightUnit = null,
+    bool IsWeighingScaleItem = false,
+    string? PluCode = null,
+    string? FssaiLicenseNo = null,
+    int? ShelfLifeDays = null,
+    string? StorageTemperature = null,
+    bool IsOrganic = false,
+    bool IsPerishable = false,
+    string? CountryOfOrigin = null,
+    // Electronics
+    bool IsSerialTracked = false,
+    int? WarrantyMonths = null,
+    string? WarrantyType = null,
+    string? ModelNumber = null,
+    string? PartNumber = null,
+    string? TechnicalSpecifications = null,
+    int? ReturnWindowDays = null,
+    // Pharmacy
+    string? DrugSchedule = null,
+    string? DosageForm = null,
+    string? PackagingDetails = null,
+    bool IsNarcotic = false,
+    string? StorageCondition = null,
+    // Fashion
+    string? GenderTarget = null,
+    string? MaterialFabric = null,
+    string? FitType = null,
+    string? Season = null,
+    string? StyleCode = null,
+    string? CustomAttributesJson = null);
 
 public sealed record SaveProductVariantRequest(string? Size, string? Color, decimal? SellingPrice, decimal? Mrp);
 
-public sealed record SaveCategoryRequest(Guid? Id, Guid ShopId, Guid? ParentCategoryId, string Name, string? Description, string? ImageUrl, string? ColorHex, int DisplayOrder);
-public sealed record CategoryTreeNodeDto(Guid Id, string Name, string? Description, string? ImageUrl, string? ColorHex, int DisplayOrder, IReadOnlyList<CategoryTreeNodeDto> Children);
+public sealed record SaveCategoryRequest(Guid? Id, Guid ShopId, Guid? ParentCategoryId, string Name, string? Description, string? ImageUrl, string? ColorHex, int DisplayOrder, CategoryType CategoryType = CategoryType.General);
+public sealed record CategoryTreeNodeDto(Guid Id, string Name, string? Description, string? ImageUrl, string? ColorHex, int DisplayOrder, IReadOnlyList<CategoryTreeNodeDto> Children, CategoryType CategoryType = CategoryType.General);
 
 public sealed record SupplierSummaryDto(Guid Id, string Name, string? Phone, string? Email, decimal OutstandingBalance);
 public sealed record SupplierDetailDto(Guid Id, Guid ShopId, string Name, string? ContactPerson, string? Phone, string? Email, string? TaxRegistrationNumber, string? Pan, string? Address, string? BankDetails, int CreditDays, string? PaymentTerms, decimal OpeningBalance, decimal OutstandingBalance);

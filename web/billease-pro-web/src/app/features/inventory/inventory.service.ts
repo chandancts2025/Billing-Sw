@@ -17,6 +17,8 @@ import {
   InventoryProductDetailDto,
   InventoryProductListItemDto,
   PurchaseOrderDto,
+  PurchaseReturnDto,
+  PurchaseReturnRequest,
   SaveCategoryRequest,
   SaveProductRequest,
   SaveSupplierRequest,
@@ -68,4 +70,6 @@ export class InventoryService {
   unitConversions(shopId: string) { return this.http.get<UnitConversionDto[]>(`${this.base}/unit-conversions`, { params: { shopId } }); }
   saveUnitConversion(payload: SaveUnitConversionRequest) { return this.http.post<UnitConversionDto>(`${this.base}/unit-conversions`, payload); }
   alerts(shopId: string) { return this.http.get<InventoryAlertDto[]>(`${this.base}/alerts`, { params: { shopId } }); }
+  purchaseReturns(shopId?: string) { return this.http.get<PurchaseReturnDto[]>(`${environment.apiBaseUrl}/purchasereturns`, { params: shopId ? { shopId } : undefined }); }
+  createPurchaseReturn(payload: PurchaseReturnRequest) { return this.http.post<PurchaseReturnDto>(`${this.base}/purchases/returns`, payload); }
 }

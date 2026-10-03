@@ -9,7 +9,12 @@ public sealed class BillingProfile : Profile
     public BillingProfile()
     {
         CreateMap<Shop, ShopDto>().ReverseMap();
-        CreateMap<AppUser, UserDto>().ReverseMap();
+        CreateMap<AppUser, UserDto>();
+        CreateMap<UserDto, AppUser>()
+            .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
+            .ForMember(dest => dest.TwoFactorSecret, opt => opt.Ignore())
+            .ForMember(dest => dest.RefreshTokens, opt => opt.Ignore())
+            .ForMember(dest => dest.Shop, opt => opt.Ignore());
         CreateMap<Category, CategoryDto>().ReverseMap();
         CreateMap<UnitOfMeasure, UnitOfMeasureDto>().ReverseMap();
         CreateMap<TaxSlab, TaxSlabDto>().ReverseMap();

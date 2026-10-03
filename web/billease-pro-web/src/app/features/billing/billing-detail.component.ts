@@ -1,6 +1,6 @@
 import { JsonPipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { BillingApiService } from '../../core/services/billing-api.service';
@@ -17,6 +17,7 @@ import { PrintInvoiceDto } from './billing.models';
       <header>
         <div><strong>Bill Detail</strong><span>{{ billId }}</span></div>
         <div>
+          <button mat-flat-button color="primary" type="button" (click)="alterBill()"><mat-icon>edit_note</mat-icon>Alter / Edit Bill</button>
           <button mat-stroked-button type="button" (click)="print('a4')"><mat-icon>picture_as_pdf</mat-icon>A4</button>
           <button mat-stroked-button type="button" (click)="print('80')"><mat-icon>receipt</mat-icon>80mm</button>
           <button mat-stroked-button type="button" (click)="print('58')"><mat-icon>receipt_long</mat-icon>58mm</button>
@@ -35,12 +36,19 @@ export class BillingDetailComponent {
   private readonly api = inject(BillingApiService);
   private readonly billing = inject(BillingService);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly printer = inject(PrintService);
   readonly billId = this.route.snapshot.paramMap.get('id') ?? '';
   readonly invoice = signal<PrintInvoiceDto | null>(null);
 
   constructor() {
     if (this.billId) this.api.printBill(this.billId).subscribe(data => this.invoice.set(data));
+  }
+
+  alterBill(): void {
+    if (this.billId) {
+      void this.router.navigate(['/billing/new'], { queryParams: { alterInvoiceId: this.billId } });
+    }
   }
 
   confirm(): void {

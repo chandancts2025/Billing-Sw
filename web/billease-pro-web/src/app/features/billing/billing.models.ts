@@ -2,6 +2,8 @@ export type DiscountValueType = 'Percentage' | 'FlatAmount' | 'Flat';
 export type PaymentMethod = 'Cash' | 'Card' | 'UPI' | 'NetBanking' | 'Cheque' | 'Credit' | 'Split' | 'Others';
 export type SalesInvoiceStatus = 'Draft' | 'Confirmed' | 'Cancelled';
 
+import { CategoryType } from '../inventory/inventory.models';
+
 export interface ProductSearchResultDto {
   productId: string;
   productVariantId?: string | null;
@@ -18,6 +20,13 @@ export interface ProductSearchResultDto {
   maxDiscountPercent: number;
   requiresBatchSelection: boolean;
   batches: ProductBatchOptionDto[];
+  categoryType?: CategoryType;
+  rackLocation?: string | null;
+  foodType?: 'NotApplicable' | 'Veg' | 'NonVeg' | 'Egg' | 'Vegan';
+  requiresPrescription?: boolean;
+  warrantyMonths?: number | null;
+  packageSize?: string | null;
+  minSellingPrice?: number | null;
 }
 
 export interface ProductBatchOptionDto {
@@ -182,3 +191,54 @@ export interface ConfirmSalesInvoiceRequest { salesInvoiceId: string; }
 export interface CancelSalesInvoiceRequest { salesInvoiceId: string; reason?: string | null; }
 export interface ReturnSalesInvoiceRequest { salesInvoiceId: string; items: { salesInvoiceItemId: string; quantity: number; refundAmount: number }[]; reason?: string | null; }
 export interface PrintSalesInvoiceResponse { invoiceNumber: string; printContent: string; }
+
+export interface SaleInvoiceForEditItemDto {
+  productId: string;
+  productVariantId?: string | null;
+  sku: string;
+  barcode?: string | null;
+  name: string;
+  category: string;
+  unit: string;
+  stockQuantity: number;
+  mrp: number;
+  unitPrice: number;
+  quantity: number;
+  discountType: DiscountValueType;
+  discountValue: number;
+  discountAmount: number;
+  taxRate: number;
+  taxAmount: number;
+  lineTotal: number;
+  hsnSacCode?: string | null;
+  categoryType?: CategoryType;
+  rackLocation?: string | null;
+  foodType?: 'NotApplicable' | 'Veg' | 'NonVeg' | 'Egg' | 'Vegan';
+  requiresPrescription?: boolean;
+  warrantyMonths?: number | null;
+  packageSize?: string | null;
+  minSellingPrice?: number | null;
+  batchNumber?: string | null;
+  expiryDate?: string | null;
+}
+
+export interface SaleInvoiceForEditDto {
+  invoiceId: string;
+  shopId: string;
+  invoiceNumber: string;
+  invoiceDate: string;
+  status: SalesInvoiceStatus;
+  customerId?: string | null;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  walkInCustomerName?: string | null;
+  billDiscountType?: DiscountValueType | null;
+  billDiscountValue: number;
+  couponCode?: string | null;
+  notes?: string | null;
+  paymentMethod?: PaymentMethod | null;
+  paymentReference?: string | null;
+  amountTendered: number;
+  items: SaleInvoiceForEditItemDto[];
+  totals: BillTotalsDto;
+}

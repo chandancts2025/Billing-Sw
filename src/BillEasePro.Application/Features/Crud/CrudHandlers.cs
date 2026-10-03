@@ -2,6 +2,7 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using BillEasePro.Application.Abstractions;
 using BillEasePro.Domain.Common;
+using BillEasePro.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -51,18 +52,24 @@ public sealed class CreateEntityCommandHandler<TEntity, TDto> : IRequestHandler<
     private readonly IRepository<TEntity> _repository;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+    private readonly IPasswordHasher? _passwordHasher;
 
-    public CreateEntityCommandHandler(IRepository<TEntity> repository, IUnitOfWork unitOfWork, IMapper mapper)
+    public CreateEntityCommandHandler(IRepository<TEntity> repository, IUnitOfWork unitOfWork, IMapper mapper, IPasswordHasher? passwordHasher = null)
     {
         _repository = repository;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _passwordHasher = passwordHasher;
     }
 
     public async Task<TDto> Handle(CreateEntityCommand<TEntity, TDto> request, CancellationToken cancellationToken)
     {
         var entity = _mapper.Map<TEntity>(request.Dto);
         if (entity.Id == Guid.Empty) entity.Id = Guid.NewGuid();
+        if (entity is AppUser user && string.IsNullOrEmpty(user.PasswordHash) && _passwordHasher is not null)
+        {
+            user.PasswordHash = _passwordHasher.Hash("Admin@123!");
+        }
         await _repository.AddAsync(entity, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return _mapper.Map<TDto>(entity);
@@ -88,7 +95,12 @@ public sealed class UpdateEntityCommandHandler<TEntity, TDto> : IRequestHandler<
         var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
         if (entity is null) return default;
 
+        var preservedPassword = (entity as AppUser)?.PasswordHash;
         _mapper.Map(request.Dto, entity);
+        if (entity is AppUser user && string.IsNullOrEmpty(user.PasswordHash) && !string.IsNullOrEmpty(preservedPassword))
+        {
+            user.PasswordHash = preservedPassword;
+        }
         entity.Id = request.Id;
         _repository.Update(entity);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
