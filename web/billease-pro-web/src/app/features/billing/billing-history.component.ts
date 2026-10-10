@@ -7,6 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { AuthService } from '../../core/auth/auth.service';
+import { ShopStore } from '../../core/stores/shop.store';
+import { PrintService } from '../../core/services/print.service';
 import { BillingService } from './billing.service';
 import { BillHistoryRowDto, PaymentMethod, PrintInvoiceDto, SalesInvoiceStatus } from './billing.models';
 
@@ -100,7 +102,12 @@ import { BillHistoryRowDto, PaymentMethod, PrintInvoiceDto, SalesInvoiceStatus }
         <aside class="preview">
           <div class="preview-head">
             <strong>{{ selectedPrint()!.invoiceNumber }}</strong>
-            <div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <div class="pfmt-pill-group">
+                <button type="button" class="btn-fmt-pill" [class.active]="previewFormat() === '80'" (click)="previewFormat.set('80')">80mm</button>
+                <button type="button" class="btn-fmt-pill" [class.active]="previewFormat() === 'a4'" (click)="previewFormat.set('a4')">A4</button>
+              </div>
+              <button mat-icon-button type="button" title="Print this bill" (click)="printCurrentPreview()"><mat-icon>print</mat-icon></button>
               @if (selectedPrint()!.customerEmail) {
                 <button mat-icon-button type="button" title="Email" (click)="emailBill(selectedPrint()!)"><mat-icon>mail</mat-icon></button>
               }
@@ -108,7 +115,7 @@ import { BillHistoryRowDto, PaymentMethod, PrintInvoiceDto, SalesInvoiceStatus }
               <button mat-icon-button type="button" title="Close" (click)="selectedPrint.set(null)"><mat-icon>close</mat-icon></button>
             </div>
           </div>
-          <iframe title="Invoice preview" [srcdoc]="selectedPrint()!.a4Html"></iframe>
+          <iframe title="Invoice preview" [srcdoc]="previewFormat() === '80' ? selectedPrint()!.thermal80Html : selectedPrint()!.a4Html"></iframe>
         </aside>
       }
     </section>
@@ -129,6 +136,10 @@ import { BillHistoryRowDto, PaymentMethod, PrintInvoiceDto, SalesInvoiceStatus }
     .status.cancelled { background: #fee4e2; color: #b42318; }
     .empty { text-align: center; color: #667085; padding: 36px; }
     .preview { display: grid; gap: 8px; padding: 10px; }
+    .pfmt-pill-group { display: inline-flex; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; }
+    .btn-fmt-pill { background: #f8fafc; border: none; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #475569; cursor: pointer; transition: all 0.15s ease; }
+    .btn-fmt-pill.active { background: #0284c7; color: #ffffff; }
+    .btn-fmt-pill:hover:not(.active) { background: #e2e8f0; }
     iframe { width: 100%; height: 560px; border: 1px solid #e4e8ef; border-radius: 6px; background: white; }
     @media (max-width: 980px) {
       .filters { grid-template-columns: 1fr 1fr; }
@@ -150,11 +161,14 @@ export class BillingHistoryComponent {
   private readonly billing = inject(BillingService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly shopStore = inject(ShopStore);
+  private readonly printer = inject(PrintService);
   private readonly demoShopId = '10000000-0000-0000-0000-000000000001';
 
   readonly shopId = computed(() => this.auth.user()?.shopId ?? this.demoShopId);
   readonly rows = signal<BillHistoryRowDto[]>([]);
   readonly selectedPrint = signal<PrintInvoiceDto | null>(null);
+  readonly previewFormat = signal<'80' | 'a4'>(this.shopStore.receiptFormat() || '80');
   readonly filter: { from: string; to: string; paymentMode: PaymentMethod | ''; status: SalesInvoiceStatus | ''; search: string } = {
     from: '',
     to: '',
@@ -176,7 +190,19 @@ export class BillingHistoryComponent {
   }
 
   reprint(row: BillHistoryRowDto): void {
-    this.billing.printInvoice(row.id).subscribe(print => this.openPrint(print.a4Html));
+    const format = this.shopStore.receiptFormat() || '80';
+    this.billing.printInvoice(row.id).subscribe(print => {
+      const html = format === '80' ? print.thermal80Html : print.a4Html;
+      this.printer.printInvoiceHtml(html, `Invoice #${print.invoiceNumber}`, format);
+    });
+  }
+
+  printCurrentPreview(): void {
+    const print = this.selectedPrint();
+    if (!print) return;
+    const format = this.previewFormat();
+    const html = format === '80' ? print.thermal80Html : print.a4Html;
+    this.printer.printInvoiceHtml(html, `Invoice #${print.invoiceNumber}`, format);
   }
 
   alterBill(row: BillHistoryRowDto): void {
@@ -197,7 +223,7 @@ export class BillingHistoryComponent {
 
   exportPdf(): void {
     const rows = this.rows().map(row => `<tr><td>${row.billNo}</td><td>${this.formatDate(row.date)}</td><td>${row.customer}</td><td>${row.itemsCount}</td><td>${row.total}</td><td>${row.payment}</td><td>${row.status}</td></tr>`).join('');
-    this.openPrint(`<html><head><title>Bill History</title><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccc;padding:6px;text-align:left}</style></head><body><h2>Bill History</h2><table><thead><tr><th>Bill No</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+    this.printer.printInvoiceHtml(`<html><head><title>Bill History</title><style>body{font-family:Arial,sans-serif}table{width:100%;border-collapse:collapse}td,th{border:1px solid #ccc;padding:6px;text-align:left}</style></head><body><h2>Bill History</h2><table><thead><tr><th>Bill No</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`, 'Bill History', 'a4');
   }
 
   emailBill(print: PrintInvoiceDto): void {

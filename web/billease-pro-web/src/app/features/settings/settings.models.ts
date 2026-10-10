@@ -7,6 +7,7 @@ export type GstMode = 'Exclusive' | 'Inclusive';
 export type CouponType = 'Percentage' | 'Flat';
 export type RoundingMethod = '0.5 up' | 'always up' | 'always down';
 export type PaymentMode = 'Cash' | 'Card' | 'UPI' | 'Credit' | 'Split';
+export type ReceiptPaperSize = '80' | 'a4' | '58';
 export type PermissionAction = 'create' | 'read' | 'update' | 'delete';
 
 export interface MediaAsset {
@@ -50,6 +51,7 @@ export interface ShopDetailsSettings {
   invoice: {
     prefix: string;
     startingNumber: number;
+    receiptFormat: '80' | 'a4';
     showGstin: boolean;
     showPan: boolean;
     showLicenseNo: boolean;
@@ -134,6 +136,7 @@ export interface GeneralSettings {
   };
   pos: {
     defaultPaymentMode: PaymentMode;
+    receiptFormat: '80' | 'a4';
     autoConfirmOnPrint: boolean;
     requireCustomer: boolean;
     lowStockWarning: boolean;

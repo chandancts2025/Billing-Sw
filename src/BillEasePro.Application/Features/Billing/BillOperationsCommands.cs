@@ -520,6 +520,8 @@ public sealed class GetPrintInvoiceQueryHandler : IRequestHandler<GetPrintInvoic
         var width = mode == "58" ? "58mm" : mode == "80" ? "80mm" : "210mm";
         var padding = compact ? "6px" : "24px";
         var fontSize = mode == "58" ? "10px" : mode == "80" ? "12px" : "13px";
+        var pageSize = mode == "80" ? "80mm auto" : mode == "58" ? "58mm auto" : "A4 portrait";
+        var pageMargin = compact ? "0" : "10mm";
 
         var rows = string.Join("", invoice.Items.Select(item =>
             $"<tr><td><strong>{WebUtility.HtmlEncode(item.Description)}</strong>{(string.IsNullOrWhiteSpace(item.Product?.HsnSacCode) ? "" : $"<br><small style='color:#555;'>HSN: {WebUtility.HtmlEncode(item.Product.HsnSacCode)}</small>")}</td><td style='text-align:center;'>{item.Quantity:0.##}</td><td style='text-align:right;'>{item.UnitPrice:0.00}</td><td style='text-align:right;'>{item.TaxRate:0.##}%</td><td style='text-align:right;'><strong>{item.LineTotal:0.00}</strong></td></tr>"));
@@ -539,7 +541,8 @@ public sealed class GetPrintInvoiceQueryHandler : IRequestHandler<GetPrintInvoic
         <html><head><meta charset="utf-8">
         <title>Invoice {{invoice.InvoiceNumber}}</title>
         <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; width: {{width}}; margin: 0 auto; padding: {{padding}}; color: #111; font-size: {{fontSize}}; box-sizing: border-box; background: #fff; }
+        @page { size: {{pageSize}}; margin: {{pageMargin}}; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; width: {{width}}; margin: 0 auto; padding: {{padding}}; color: #111; font-size: {{fontSize}}; box-sizing: border-box; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .center { text-align: center; }
         .header { border-bottom: 2px dashed #bbb; padding-bottom: 8px; margin-bottom: 8px; text-align: center; }
         .header h1 { margin: 0 0 4px; font-size: {{(compact ? "16px" : "24px")}}; color: #0f766e; }
@@ -555,7 +558,7 @@ public sealed class GetPrintInvoiceQueryHandler : IRequestHandler<GetPrintInvoic
         .upi-qr { text-align: center; margin-top: 10px; padding: 8px; background: #f9fbfb; border: 1px solid #e1e7e7; border-radius: 6px; }
         .upi-qr img { width: 90px; height: 90px; display: block; margin: 4px auto; }
         .footer { margin-top: 12px; text-align: center; font-size: {{(compact ? "9px" : "11px")}}; color: #666; border-top: 1px dashed #bbb; padding-top: 8px; }
-        @media print { body { width: 100%; margin: 0; padding: 0; } }
+        @media print { body { width: {{(compact ? width : "100%")}}; margin: 0 auto; padding: {{(compact ? "4px" : "0")}}; } }
         </style></head><body>
         <div class="header">
           <h1>{{WebUtility.HtmlEncode(invoice.Shop?.Name ?? "BillEase Pro")}}</h1>

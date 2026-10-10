@@ -147,6 +147,7 @@ const storageKey = 'billease.settings.workspace';
               <div class="form-grid three">
                 <label>Invoice Prefix<input [(ngModel)]="draft.shop.invoice.prefix" (ngModelChange)="touch()"></label>
                 <label>Starting Invoice Number<input type="number" min="1" [(ngModel)]="draft.shop.invoice.startingNumber" (ngModelChange)="touch()"></label>
+                <label>Default Receipt Format<select [(ngModel)]="draft.shop.invoice.receiptFormat" (ngModelChange)="onReceiptFormatChange($event)"><option value="80">80mm (Thermal POS Receipt)</option><option value="a4">A4 (Standard Tax Invoice)</option></select></label>
                 <label>Bill Copies Count<select [(ngModel)]="draft.shop.invoice.copies" (ngModelChange)="touch()"><option [ngValue]="1">1 copy</option><option [ngValue]="2">2 copies</option><option [ngValue]="3">3 copies</option></select></label>
               </div>
               <div class="toggle-grid">
@@ -162,8 +163,8 @@ const storageKey = 'billease.settings.workspace';
                   <div class="rich-editor" contenteditable="true" [innerHTML]="draft.shop.invoice.terms" (input)="draft.shop.invoice.terms = editorHtml($event); touch()"></div>
                   <label>Footer Text<textarea rows="3" [(ngModel)]="draft.shop.invoice.footerText" (ngModelChange)="touch()"></textarea></label>
                 </div>
-                <div class="invoice-preview">
-                  <span>Live Preview</span>
+                <div class="invoice-preview" [class.thermal-preview]="draft.shop.invoice.receiptFormat === '80'">
+                  <span>Live Preview ({{ draft.shop.invoice.receiptFormat === '80' ? '80mm Thermal Receipt' : 'A4 Invoice' }})</span>
                   <strong>{{ invoiceNumberPreview() }}</strong>
                   <h3>{{ draft.shop.shopName }}</h3>
                   <p>{{ draft.shop.address.line1 }}, {{ draft.shop.address.city }}</p>
@@ -341,6 +342,7 @@ const storageKey = 'billease.settings.workspace';
               <h2>POS Behavior</h2>
               <div class="form-grid four">
                 <label>Default Payment Mode<select [(ngModel)]="draft.general.pos.defaultPaymentMode" (ngModelChange)="touch()"><option>Cash</option><option>Card</option><option>UPI</option><option>Credit</option><option>Split</option></select></label>
+                <label>POS Print Format<select [(ngModel)]="draft.general.pos.receiptFormat" (ngModelChange)="onPosReceiptFormatChange($event)"><option value="80">80mm Thermal Receipt</option><option value="a4">A4 Tax Invoice</option></select></label>
                 <label>Bill Copies Default<select [(ngModel)]="draft.general.pos.defaultBillCopies" (ngModelChange)="touch()"><option [ngValue]="1">1 copy</option><option [ngValue]="2">2 copies</option><option [ngValue]="3">3 copies</option></select></label>
                 <mat-checkbox [(ngModel)]="draft.general.pos.autoConfirmOnPrint" (ngModelChange)="touch()">Auto-confirm bill on print</mat-checkbox>
                 <mat-checkbox [(ngModel)]="draft.general.pos.requireCustomer" (ngModelChange)="touch()">Require customer on every bill</mat-checkbox>
@@ -394,7 +396,7 @@ const storageKey = 'billease.settings.workspace';
     </section>
   `,
   styles: [`
-    .settings-page{display:grid;grid-template-columns:288px minmax(0,1fr);min-height:calc(100vh - 74px);background:#f6f7f9}.settings-nav{position:sticky;top:64px;height:calc(100vh - 64px);background:#fff;border-right:1px solid #dfe5ec;padding:14px;display:grid;grid-template-rows:auto auto auto 1fr;gap:12px;align-content:start;overflow:auto}.nav-head{display:grid;gap:2px}.nav-head strong{font-size:20px}.nav-head span,.page-header p,.eyebrow,.search-hits span,.coupon-card span,.audit-list span,.audit-list small{color:#667085}.settings-search{height:42px;display:flex;align-items:center;gap:8px;border:1px solid #cfd6e1;border-radius:6px;padding:0 10px;background:#fff}.settings-search input{border:0;outline:0;width:100%;min-width:0}.search-hits{display:grid;gap:4px;border:1px solid #dfe5ec;border-radius:6px;padding:6px}.search-hits button{border:0;background:#f8fafc;border-radius:5px;padding:8px;text-align:left;display:grid;gap:2px;cursor:pointer}nav{display:grid;gap:6px}nav button,.mobile-accordion button{display:flex;align-items:center;gap:10px;border:0;background:transparent;border-radius:6px;padding:10px;text-align:left;cursor:pointer;color:#344054}nav button.active,nav button:hover,.mobile-accordion button.active{background:#eef7f6;color:var(--brand-color,#0f766e)}.mobile-accordion{display:none;padding:10px;background:#fff;border-bottom:1px solid #dfe5ec}.mobile-accordion summary{display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer}.settings-main{min-width:0;padding:16px;display:grid;gap:14px;align-content:start}.page-header,.section-title,.sticky-save{display:flex;justify-content:space-between;align-items:center;gap:12px}.page-header h1{margin:0;font-size:28px}.page-header p{margin:3px 0 0}.eyebrow{font-size:12px;text-transform:uppercase;font-weight:700;letter-spacing:.06em}.header-actions,.section-title>div,.coupon-actions,.user-actions,.sticky-save>div{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dirty-pill{border:1px solid #fdb022;color:#b54708;background:#fffaeb;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700}.settings-content{display:grid;gap:14px}.panel{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:14px;display:grid;gap:12px}.panel h2{margin:0;font-size:18px}.panel h3{margin:6px 0 0;font-size:14px}.form-grid{display:grid;gap:12px;align-items:end}.form-grid.three{grid-template-columns:repeat(3,minmax(160px,1fr))}.form-grid.four{grid-template-columns:repeat(4,minmax(140px,1fr))}.wide{grid-column:span 2}label{display:grid;gap:6px;font-size:13px;color:#344054;font-weight:600}input,select,textarea{width:100%;min-height:38px;border:1px solid #cfd6e1;border-radius:6px;padding:0 9px;background:#fff;color:#19202a}textarea{padding:9px;resize:vertical}.media-grid,.invoice-layout{display:grid;grid-template-columns:1fr 1fr 300px;gap:12px;align-items:stretch}.invoice-layout{grid-template-columns:minmax(0,1fr) 360px}.upload{border:1px dashed #b8c2d0;border-radius:8px;padding:14px;align-content:center;background:#fbfcfe}.upload input{border:0;padding:0}.brand-preview,.invoice-preview{border:1px solid #dfe5ec;border-radius:8px;padding:14px;display:grid;gap:5px;align-content:start;background:#f8fafc}.brand-preview img{max-width:80px;max-height:52px;object-fit:contain}.brand-preview mat-icon{font-size:42px;width:42px;height:42px;color:var(--brand-color,#0f766e)}.toggle-grid,.category-chips{display:flex;flex-wrap:wrap;gap:8px 14px}.rich-editor{min-height:118px;border:1px solid #cfd6e1;border-radius:6px;padding:10px;background:#fff;outline-color:var(--brand-color,#0f766e)}.invoice-preview strong{justify-self:start;background:#eef7f6;color:var(--brand-color,#0f766e);border-radius:5px;padding:4px 8px}.invoice-preview h3{font-size:20px}.invoice-preview p,.invoice-preview footer{margin:0;color:#475467;font-size:13px}.table-wrap{overflow:auto;border:1px solid #edf1f6;border-radius:8px}table{width:100%;border-collapse:collapse;min-width:840px}th,td{padding:9px;border-bottom:1px solid #edf1f6;text-align:left}th{background:#f8fafc;color:#475467;font-size:12px}td input,td select{min-height:34px}.permission-table td:not(:first-child),.permission-table th:not(:first-child){text-align:center}.category-chips button{border:1px solid #d0d5dd;background:#fff;border-radius:999px;padding:6px 10px;cursor:pointer}.category-chips button.active{background:#eef7f6;border-color:var(--brand-color,#0f766e);color:var(--brand-color,#0f766e)}.coupon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}.coupon-card{border:1px solid #e4e8ef;border-radius:8px;padding:10px;display:grid;grid-template-columns:1fr 72px auto;gap:10px;align-items:center}.coupon-card>div:first-child{display:grid;gap:3px}.qr{width:64px;height:64px;display:grid;grid-template-columns:repeat(8,1fr);gap:2px;background:#fff;border:1px solid #111;padding:4px}.qr i{background:#fff}.qr i.on{background:#111}.status{display:inline-flex;border-radius:999px;background:#eef7f6;color:var(--brand-color,#0f766e);padding:4px 8px;font-size:12px;font-weight:700}.history-list{display:flex;gap:8px;flex-wrap:wrap}.history-list span{border:1px solid #d0d5dd;border-radius:999px;padding:5px 8px;font-size:12px;color:#475467}.hours-grid{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:8px}.hours-grid div{display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;align-items:center;border:1px solid #edf1f6;border-radius:6px;padding:8px}.audit-list{display:grid;gap:8px}.audit-list div{display:grid;gap:2px;border-left:3px solid var(--brand-color,#0f766e);padding:8px 10px;background:#f8fafc;border-radius:6px}.audit-list p{margin:0;color:#667085}.sticky-save{position:sticky;bottom:0;z-index:5;background:#ffffffe8;backdrop-filter:blur(8px);border:1px solid #dfe5ec;border-radius:8px;padding:10px 12px;box-shadow:0 -8px 24px rgba(16,24,40,.08)}.sticky-save span{color:#667085}@media(max-width:1100px){.settings-page{grid-template-columns:1fr}.settings-nav{display:none}.mobile-accordion{display:block}.settings-main{padding:12px}.form-grid.three,.form-grid.four,.media-grid,.invoice-layout,.hours-grid{grid-template-columns:1fr}.page-header,.sticky-save{align-items:flex-start;flex-direction:column}.coupon-card{grid-template-columns:1fr auto}.coupon-actions{grid-column:1 / -1}.wide{grid-column:auto}}
+    .settings-page{display:grid;grid-template-columns:288px minmax(0,1fr);min-height:calc(100vh - 74px);background:#f6f7f9}.settings-nav{position:sticky;top:64px;height:calc(100vh - 64px);background:#fff;border-right:1px solid #dfe5ec;padding:14px;display:grid;grid-template-rows:auto auto auto 1fr;gap:12px;align-content:start;overflow:auto}.nav-head{display:grid;gap:2px}.nav-head strong{font-size:20px}.nav-head span,.page-header p,.eyebrow,.search-hits span,.coupon-card span,.audit-list span,.audit-list small{color:#667085}.settings-search{height:42px;display:flex;align-items:center;gap:8px;border:1px solid #cfd6e1;border-radius:6px;padding:0 10px;background:#fff}.settings-search input{border:0;outline:0;width:100%;min-width:0}.search-hits{display:grid;gap:4px;border:1px solid #dfe5ec;border-radius:6px;padding:6px}.search-hits button{border:0;background:#f8fafc;border-radius:5px;padding:8px;text-align:left;display:grid;gap:2px;cursor:pointer}nav{display:grid;gap:6px}nav button,.mobile-accordion button{display:flex;align-items:center;gap:10px;border:0;background:transparent;border-radius:6px;padding:10px;text-align:left;cursor:pointer;color:#344054}nav button.active,nav button:hover,.mobile-accordion button.active{background:#eef7f6;color:var(--brand-color,#0f766e)}.mobile-accordion{display:none;padding:10px;background:#fff;border-bottom:1px solid #dfe5ec}.mobile-accordion summary{display:flex;align-items:center;gap:8px;font-weight:700;cursor:pointer}.settings-main{min-width:0;padding:16px;display:grid;gap:14px;align-content:start}.page-header,.section-title,.sticky-save{display:flex;justify-content:space-between;align-items:center;gap:12px}.page-header h1{margin:0;font-size:28px}.page-header p{margin:3px 0 0}.eyebrow{font-size:12px;text-transform:uppercase;font-weight:700;letter-spacing:.06em}.header-actions,.section-title>div,.coupon-actions,.user-actions,.sticky-save>div{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.dirty-pill{border:1px solid #fdb022;color:#b54708;background:#fffaeb;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:700}.settings-content{display:grid;gap:14px}.panel{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:14px;display:grid;gap:12px}.panel h2{margin:0;font-size:18px}.panel h3{margin:6px 0 0;font-size:14px}.form-grid{display:grid;gap:12px;align-items:end}.form-grid.three{grid-template-columns:repeat(3,minmax(160px,1fr))}.form-grid.four{grid-template-columns:repeat(4,minmax(140px,1fr))}.wide{grid-column:span 2}label{display:grid;gap:6px;font-size:13px;color:#344054;font-weight:600}input,select,textarea{width:100%;min-height:38px;border:1px solid #cfd6e1;border-radius:6px;padding:0 9px;background:#fff;color:#19202a}textarea{padding:9px;resize:vertical}.media-grid,.invoice-layout{display:grid;grid-template-columns:1fr 1fr 300px;gap:12px;align-items:stretch}.invoice-layout{grid-template-columns:minmax(0,1fr) 360px}.upload{border:1px dashed #b8c2d0;border-radius:8px;padding:14px;align-content:center;background:#fbfcfe}.upload input{border:0;padding:0}.brand-preview,.invoice-preview{border:1px solid #dfe5ec;border-radius:8px;padding:14px;display:grid;gap:5px;align-content:start;background:#f8fafc}.invoice-preview.thermal-preview{max-width:300px;margin:0 auto;border:2px dashed #94a3b8;background:#fff;font-family:monospace;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,0.06)}.brand-preview img{max-width:80px;max-height:52px;object-fit:contain}.brand-preview mat-icon{font-size:42px;width:42px;height:42px;color:var(--brand-color,#0f766e)}.toggle-grid,.category-chips{display:flex;flex-wrap:wrap;gap:8px 14px}.rich-editor{min-height:118px;border:1px solid #cfd6e1;border-radius:6px;padding:10px;background:#fff;outline-color:var(--brand-color,#0f766e)}.invoice-preview strong{justify-self:start;background:#eef7f6;color:var(--brand-color,#0f766e);border-radius:5px;padding:4px 8px}.invoice-preview h3{font-size:20px}.invoice-preview p,.invoice-preview footer{margin:0;color:#475467;font-size:13px}.table-wrap{overflow:auto;border:1px solid #edf1f6;border-radius:8px}table{width:100%;border-collapse:collapse;min-width:840px}th,td{padding:9px;border-bottom:1px solid #edf1f6;text-align:left}th{background:#f8fafc;color:#475467;font-size:12px}td input,td select{min-height:34px}.permission-table td:not(:first-child),.permission-table th:not(:first-child){text-align:center}.category-chips button{border:1px solid #d0d5dd;background:#fff;border-radius:999px;padding:6px 10px;cursor:pointer}.category-chips button.active{background:#eef7f6;border-color:var(--brand-color,#0f766e);color:var(--brand-color,#0f766e)}.coupon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}.coupon-card{border:1px solid #e4e8ef;border-radius:8px;padding:10px;display:grid;grid-template-columns:1fr 72px auto;gap:10px;align-items:center}.coupon-card>div:first-child{display:grid;gap:3px}.qr{width:64px;height:64px;display:grid;grid-template-columns:repeat(8,1fr);gap:2px;background:#fff;border:1px solid #111;padding:4px}.qr i{background:#fff}.qr i.on{background:#111}.status{display:inline-flex;border-radius:999px;background:#eef7f6;color:var(--brand-color,#0f766e);padding:4px 8px;font-size:12px;font-weight:700}.history-list{display:flex;gap:8px;flex-wrap:wrap}.history-list span{border:1px solid #d0d5dd;border-radius:999px;padding:5px 8px;font-size:12px;color:#475467}.hours-grid{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:8px}.hours-grid div{display:grid;grid-template-columns:120px 1fr 1fr;gap:8px;align-items:center;border:1px solid #edf1f6;border-radius:6px;padding:8px}.audit-list{display:grid;gap:8px}.audit-list div{display:grid;gap:2px;border-left:3px solid var(--brand-color,#0f766e);padding:8px 10px;background:#f8fafc;border-radius:6px}.audit-list p{margin:0;color:#667085}.sticky-save{position:sticky;bottom:0;z-index:5;background:#ffffffe8;backdrop-filter:blur(8px);border:1px solid #dfe5ec;border-radius:8px;padding:10px 12px;box-shadow:0 -8px 24px rgba(16,24,40,.08)}.sticky-save span{color:#667085}@media(max-width:1100px){.settings-page{grid-template-columns:1fr}.settings-nav{display:none}.mobile-accordion{display:block}.settings-main{padding:12px}.form-grid.three,.form-grid.four,.media-grid,.invoice-layout,.hours-grid{grid-template-columns:1fr}.page-header,.sticky-save{align-items:flex-start;flex-direction:column}.coupon-card{grid-template-columns:1fr auto}.coupon-actions{grid-column:1 / -1}.wide{grid-column:auto}}
   `]
 })
 export class SettingsComponent {
@@ -505,9 +507,25 @@ export class SettingsComponent {
 
   touch(): void { this.dirty.set(true); }
 
+  onReceiptFormatChange(format: '80' | 'a4'): void {
+    this.draft.shop.invoice.receiptFormat = format;
+    this.draft.general.pos.receiptFormat = format;
+    this.shopStore.setReceiptFormat(format);
+    this.touch();
+  }
+
+  onPosReceiptFormatChange(format: '80' | 'a4'): void {
+    this.draft.general.pos.receiptFormat = format;
+    this.draft.shop.invoice.receiptFormat = format;
+    this.shopStore.setReceiptFormat(format);
+    this.touch();
+  }
+
   saveSection(): void {
     this.addAudit(`Saved ${this.currentTab().label}`);
     localStorage.setItem(storageKey, JSON.stringify(this.draft));
+    const format = this.draft.shop.invoice.receiptFormat || this.draft.general.pos.receiptFormat || '80';
+    this.shopStore.setReceiptFormat(format);
     this.dirty.set(false);
     this.applyRuntimeSettings();
     this.notifications.success(`${this.currentTab().label} saved.`);
@@ -658,16 +676,22 @@ export class SettingsComponent {
 
   private loadDraft(): SettingsDraft {
     const stored = localStorage.getItem(storageKey);
-    if (!stored) return createDefaultSettings();
+    const defaults = createDefaultSettings();
+    if (!stored) return defaults;
     try {
-      return { ...createDefaultSettings(), ...JSON.parse(stored) } as SettingsDraft;
+      const parsed = { ...defaults, ...JSON.parse(stored) } as SettingsDraft;
+      parsed.shop.invoice.receiptFormat ??= '80';
+      parsed.general.pos.receiptFormat ??= parsed.shop.invoice.receiptFormat || '80';
+      return parsed;
     } catch {
-      return createDefaultSettings();
+      return defaults;
     }
   }
 
   private applyRuntimeSettings(): void {
     const shopId = this.auth.user()?.shopId ?? '10000000-0000-0000-0000-000000000001';
+    const format = this.draft.shop.invoice.receiptFormat || this.draft.general.pos.receiptFormat || '80';
+    this.shopStore.setReceiptFormat(format);
     this.shopStore.setSettings({
       shopId,
       shopName: this.draft.shop.shopName,
@@ -696,7 +720,7 @@ export class SettingsComponent {
         preventMultipleOperatorSessions: String(this.draft.general.pos.preventMultipleOperatorSessions),
         invoicePrefix: this.draft.shop.invoice.prefix,
         invoiceStartingNumber: String(this.draft.shop.invoice.startingNumber),
-        printTemplate: 'Thermal80',
+        printTemplate: format === 'a4' ? 'A4' : 'Thermal80',
         upiId: this.draft.shop.contact.primaryPhone ? this.draft.shop.contact.primaryPhone + '@upi' : '',
         termsAndConditions: this.draft.shop.invoice.terms
       }).subscribe({
@@ -729,7 +753,7 @@ function createDefaultSettings(): SettingsDraft {
     contact: { primaryPhone: '+91-9000000000', alternatePhone: '', email: 'demo@billeasepro.local', website: '' },
     licenses: { gstin: '29ABCDE1234F1Z5', pan: 'ABCDE1234F', fssaiLicense: '', drugLicenseNo: '', tradeLicense: '' },
     bank: { bankName: '', accountNo: '', ifsc: '', branch: '' },
-    invoice: { prefix: 'BILL-', startingNumber: 1, showGstin: true, showPan: true, showLicenseNo: true, showBankDetails: false, showSignatureLine: true, terms: 'Goods once sold will be accepted for return as per store policy.', footerText: 'Thank you for shopping with us.', copies: 1 }
+    invoice: { prefix: 'BILL-', startingNumber: 1, receiptFormat: '80', showGstin: true, showPan: true, showLicenseNo: true, showBankDetails: false, showSignatureLine: true, terms: 'Goods once sold will be accepted for return as per store policy.', footerText: 'Thank you for shopping with us.', copies: 1 }
   };
   const taxes: TaxSettings = {
     regime: 'GST',
@@ -755,7 +779,7 @@ function createDefaultSettings(): SettingsDraft {
       timeZone: 'Asia/Kolkata',
       language: 'English'
     },
-    pos: { defaultPaymentMode: 'Cash', autoConfirmOnPrint: false, requireCustomer: false, lowStockWarning: true, autoPrintAfterConfirm: true, defaultBillCopies: 1, preventMultipleOperatorSessions: true },
+    pos: { defaultPaymentMode: 'Cash', receiptFormat: '80', autoConfirmOnPrint: false, requireCustomer: false, lowStockWarning: true, autoPrintAfterConfirm: true, defaultBillCopies: 1, preventMultipleOperatorSessions: true },
     notifications: { globalLowStockThreshold: 5, expiryAlertDays: [15, 30, 60], dailySummaryEmail: true, lowStockDigest: true, paymentDueReminders: true, whatsappProviderApiKey: '' },
     loyalty: { enabled: true, earnPoints: 1, earnPerAmount: 100, redeemPoints: 10, redeemAmount: 1, minPointsToRedeem: 100, expiryDays: 365 }
   };

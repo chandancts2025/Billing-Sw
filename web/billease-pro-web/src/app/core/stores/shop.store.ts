@@ -3,12 +3,14 @@ import { ShopSettingsDto } from '../models/api.models';
 
 const brandColorKey = 'billease.brandColor';
 const darkModeKey = 'billease.darkMode';
+const receiptFormatKey = 'billease.receiptFormat';
 
 @Injectable({ providedIn: 'root' })
 export class ShopStore {
   private readonly settingsSignal = signal<ShopSettingsDto | null>(null);
   readonly settings = this.settingsSignal.asReadonly();
   readonly darkMode = signal(localStorage.getItem(darkModeKey) === 'true');
+  readonly receiptFormat = signal<'80' | 'a4'>((localStorage.getItem(receiptFormatKey) as '80' | 'a4') || '80');
 
   constructor() {
     effect(() => {
@@ -21,6 +23,11 @@ export class ShopStore {
   setSettings(settings: ShopSettingsDto): void {
     this.settingsSignal.set(settings);
     localStorage.setItem(brandColorKey, settings.brandColor);
+  }
+
+  setReceiptFormat(format: '80' | 'a4'): void {
+    this.receiptFormat.set(format);
+    localStorage.setItem(receiptFormatKey, format);
   }
 
   toggleDarkMode(): void {

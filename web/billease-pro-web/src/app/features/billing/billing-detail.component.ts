@@ -65,6 +65,7 @@ export class BillingDetailComponent {
   print(mode: 'a4' | '80' | '58'): void {
     const template = this.invoice();
     if (!template) return;
-    this.printer.printHtml(mode === 'a4' ? template.a4Html : mode === '80' ? template.thermal80Html : template.thermal58Html);
+    const html = mode === 'a4' ? template.a4Html : mode === '80' ? template.thermal80Html : template.thermal58Html;
+    this.printer.printInvoiceHtml(html, `Invoice #${template.invoiceNumber}`, mode);
   }
 }

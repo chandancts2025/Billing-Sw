@@ -9,6 +9,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { AuthService } from '../../core/auth/auth.service';
+import { ShopStore } from '../../core/stores/shop.store';
+import { PrintService } from '../../core/services/print.service';
 import { BillingService } from './billing.service';
 import {
   BillHistoryRowDto,
@@ -527,14 +529,15 @@ interface BillLine {
                 <div class="bill-disc-input">
                   <label>Bill Discount</label>
                   <div class="disc-pair">
-                    <select [(ngModel)]="billDiscountType" (ngModelChange)="recalculate()">
-                      <option [value]="null">None</option>
-                      <option value="Percentage">%</option>
-                      <option value="FlatAmount">₹</option>
+                    <select [(ngModel)]="billDiscountType" (ngModelChange)="recalculate()" class="bill-disc-select">
+                      <option [ngValue]="null">None</option>
+                      <option [ngValue]="'Percentage'">% (Percentage)</option>
+                      <option [ngValue]="'FlatAmount'">₹ (Flat)</option>
                     </select>
                     <input
                       type="number"
                       min="0"
+                      class="bill-disc-val-input"
                       [(ngModel)]="billDiscountValue"
                       (ngModelChange)="recalculate()"
                       placeholder="0"
@@ -720,6 +723,33 @@ interface BillLine {
 
           <!-- CHECKOUT ACTION BUTTONS -->
           <div class="checkout-actions-card">
+            <div class="print-format-toggle-bar">
+              <span class="pfmt-bar-label">
+                <mat-icon>print</mat-icon>
+                <span>Receipt Format:</span>
+              </span>
+              <div class="pfmt-pill-group">
+                <button
+                  type="button"
+                  class="pfmt-pill-btn"
+                  [class.active]="selectedPrintFormat() === '80'"
+                  (click)="setPrintFormat('80')"
+                  title="Print as 80mm Thermal Receipt">
+                  <mat-icon>receipt</mat-icon>
+                  <span>80mm</span>
+                </button>
+                <button
+                  type="button"
+                  class="pfmt-pill-btn"
+                  [class.active]="selectedPrintFormat() === 'a4'"
+                  (click)="setPrintFormat('a4')"
+                  title="Print as A4 Full Page Invoice">
+                  <mat-icon>picture_as_pdf</mat-icon>
+                  <span>A4</span>
+                </button>
+              </div>
+            </div>
+
             <div class="action-buttons-grid">
               <button type="button" class="pos-act-btn btn-draft" (click)="saveDraft()" title="Hold or save bill as draft (F5)">
                 <mat-icon>pause_circle_outline</mat-icon>
@@ -838,6 +868,33 @@ interface BillLine {
                   <mat-icon>info</mat-icon>
                   <div>
                     The invoice will be saved and inventory stock will be deducted once you confirm.
+                  </div>
+                </div>
+              }
+
+              @if (pendingAction()?.print) {
+                <div class="modal-print-format-box">
+                  <div class="pfmt-box-header">
+                    <mat-icon>print</mat-icon>
+                    <span>Print Format for this Receipt:</span>
+                  </div>
+                  <div class="pfmt-modal-options">
+                    <label class="pfmt-radio-card" [class.selected]="selectedPrintFormat() === '80'" (click)="setPrintFormat('80')">
+                      <input type="radio" name="modalPfmt" [checked]="selectedPrintFormat() === '80'" (change)="setPrintFormat('80')" />
+                      <mat-icon>receipt</mat-icon>
+                      <div>
+                        <strong>80mm Thermal Receipt</strong>
+                        <small>Standard POS roll (thermal printers)</small>
+                      </div>
+                    </label>
+                    <label class="pfmt-radio-card" [class.selected]="selectedPrintFormat() === 'a4'" (click)="setPrintFormat('a4')">
+                      <input type="radio" name="modalPfmt" [checked]="selectedPrintFormat() === 'a4'" (change)="setPrintFormat('a4')" />
+                      <mat-icon>picture_as_pdf</mat-icon>
+                      <div>
+                        <strong>A4 Full Invoice</strong>
+                        <small>Standard page format (A4 / Letter)</small>
+                      </div>
+                    </label>
                   </div>
                 </div>
               }
@@ -2082,14 +2139,17 @@ interface BillLine {
       border: 1px solid #cbd5e1;
       border-radius: 6px;
       font-size: 11px;
-      font-weight: 600;
-      color: #475569;
-      background: #f8fafc;
-      padding: 0 2px;
+      font-weight: 700;
+      color: #0f172a !important;
+      background: #ffffff !important;
+      padding: 0 4px;
       outline: none;
+      cursor: pointer;
     }
     .disc-input {
       text-align: right;
+      color: #0f172a !important;
+      background: #ffffff !important;
     }
 
     .tax-badge {
@@ -2408,51 +2468,203 @@ interface BillLine {
     }
     .disc-pair, .coupon-pair {
       display: flex;
-      height: 32px;
+      height: 34px;
     }
-    .disc-pair select {
-      border: 1px solid var(--border-subtle);
+    .disc-pair select, .bill-disc-select {
+      border: 1px solid #cbd5e1;
       border-right: 0;
       border-radius: 6px 0 0 6px;
-      background: #f8fafc;
-      font-size: 11px;
-      padding: 0 4px;
-      font-weight: 600;
-    }
-    .disc-pair input {
-      flex: 1;
-      width: 40px;
-      border: 1px solid var(--border-subtle);
-      border-radius: 0 6px 6px 0;
+      background: #ffffff !important;
+      color: #0f172a !important;
       font-size: 12px;
+      padding: 0 8px;
       font-weight: 600;
-      padding: 0 6px;
+      min-width: 96px;
+      cursor: pointer;
       outline: none;
+    }
+    .disc-pair select:focus, .bill-disc-select:focus {
+      border-color: var(--brand, #0f766e);
+    }
+    .disc-pair select option, .bill-disc-select option, .disc-type-sel option {
+      background: #ffffff !important;
+      color: #0f172a !important;
+    }
+    .disc-pair input, .bill-disc-val-input {
+      flex: 1;
+      width: 50px;
+      border: 1px solid #cbd5e1;
+      border-radius: 0 6px 6px 0;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 0 8px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .disc-pair input:focus, .bill-disc-val-input:focus {
+      border-color: var(--brand, #0f766e);
+      box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.15);
     }
     .coupon-pair input {
       flex: 1;
       width: 50px;
-      border: 1px solid var(--border-subtle);
+      border: 1px solid #cbd5e1;
       border-right: 0;
       border-radius: 6px 0 0 6px;
-      font-size: 11px;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      font-size: 12px;
       font-weight: 600;
-      padding: 0 6px;
+      padding: 0 8px;
       outline: none;
       text-transform: uppercase;
     }
+    .coupon-pair input:focus {
+      border-color: var(--brand, #0f766e);
+      box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.15);
+    }
     .btn-apply-coupon {
-      border: 1px solid var(--border-subtle);
+      border: 1px solid #cbd5e1;
       border-radius: 0 6px 6px 0;
       background: #f1f5f9;
       font-size: 11px;
       font-weight: 700;
       color: #334155;
-      padding: 0 8px;
+      padding: 0 10px;
       cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
     }
     .btn-apply-coupon:hover {
+      background: var(--brand, #0f766e);
+      color: #ffffff;
+      border-color: var(--brand, #0f766e);
+    }
+
+    /* RECEIPT PRINT FORMAT TOGGLE BAR */
+    .print-format-toggle-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .pfmt-bar-label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .pfmt-bar-label mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      color: var(--brand, #0f766e);
+    }
+    .pfmt-pill-group {
+      display: flex;
+      gap: 4px;
       background: #e2e8f0;
+      padding: 2px;
+      border-radius: 6px;
+    }
+    .pfmt-pill-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border: none;
+      background: transparent;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .pfmt-pill-btn mat-icon {
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
+    }
+    .pfmt-pill-btn.active {
+      background: #ffffff;
+      color: var(--brand, #0f766e);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    /* MODAL PRINT FORMAT SELECTION BOX */
+    .modal-print-format-box {
+      margin-top: 12px;
+      padding: 10px;
+      background: #f0fdfa;
+      border: 1px solid var(--brand-border, #99f6e4);
+      border-radius: 8px;
+    }
+    .pfmt-box-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--brand, #0f766e);
+      margin-bottom: 8px;
+    }
+    .pfmt-box-header mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+    .pfmt-modal-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .pfmt-radio-card {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .pfmt-radio-card.selected {
+      border-color: var(--brand, #0f766e);
+      background: #ffffff;
+      box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.12);
+    }
+    .pfmt-radio-card input {
+      margin: 0;
+      cursor: pointer;
+    }
+    .pfmt-radio-card mat-icon {
+      color: var(--brand, #0f766e);
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+    .pfmt-radio-card div {
+      display: flex;
+      flex-direction: column;
+    }
+    .pfmt-radio-card strong {
+      font-size: 12px;
+      color: #0f172a;
+    }
+    .pfmt-radio-card small {
+      font-size: 10px;
+      color: #64748b;
     }
     .coupon-alert-msg {
       font-size: 11px;
@@ -3368,6 +3580,17 @@ export class BillingNewComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly shopStore = inject(ShopStore);
+  private readonly printer = inject(PrintService);
+
+  readonly selectedPrintFormat = signal<'80' | 'a4'>(
+    (localStorage.getItem('billease.receiptFormat') as '80' | 'a4') || this.shopStore.receiptFormat() || '80'
+  );
+
+  setPrintFormat(format: '80' | 'a4'): void {
+    this.selectedPrintFormat.set(format);
+    this.shopStore.setReceiptFormat(format);
+  }
 
   @ViewChild('productSearch') productSearch?: ElementRef<HTMLInputElement>;
 
@@ -3879,7 +4102,7 @@ export class BillingNewComponent implements OnInit {
       this.billing.alterSale(this.alteringInvoiceId()!, payload).subscribe({
         next: (result) => {
           this.isSubmitting.set(false);
-          if (print) this.print(result, '80');
+          if (print) this.print(result, this.selectedPrintFormat());
           this.exitAlterMode();
           this.router.navigate(['/billing', result.invoice.id]);
         },
@@ -3896,7 +4119,7 @@ export class BillingNewComponent implements OnInit {
       this.billing.alterSale(this.resumedDraftId()!, payload).subscribe({
         next: (result) => {
           this.isSubmitting.set(false);
-          if (print) this.print(result, '80');
+          if (print) this.print(result, this.selectedPrintFormat());
           this.resumedDraftId.set(null);
           this.cancel();
           this.loadDraftsCount();
@@ -3916,17 +4139,15 @@ export class BillingNewComponent implements OnInit {
     this.billing.createSale(payload).subscribe({
       next: (result) => {
         this.isSubmitting.set(false);
-        if (print) this.print(result, '80');
+        if (print) this.print(result, this.selectedPrintFormat());
         this.cancel();
         this.loadDraftsCount();
       },
       error: () => {
         this.isSubmitting.set(false);
         if (print) {
-          const w = window.open('', '_blank', 'width=800,height=600');
-          w?.document.write(`<html><body><h2>BillEase Store</h2><p>Invoice Created</p><p>Total: ₹${total}</p></body></html>`);
-          w?.document.close();
-          w?.print();
+          const fallbackHtml = this.buildOfflineInvoiceHtml(total, this.selectedPrintFormat());
+          this.printer.printInvoiceHtml(fallbackHtml, 'Tax Invoice', this.selectedPrintFormat());
         }
         this.cancel();
         this.loadDraftsCount();
@@ -4109,14 +4330,61 @@ export class BillingNewComponent implements OnInit {
     this.recalculate();
   }
 
-  print(result: SaleInvoiceDetailDto, mode: 'a4' | '80' | '58'): void {
-    this.billing.printInvoice(result.invoice.id).subscribe(print => {
-      const html = mode === 'a4' ? print.a4Html : mode === '80' ? print.thermal80Html : print.thermal58Html;
-      const popup = window.open('', '_blank', 'width=900,height=700');
-      popup?.document.write(html);
-      popup?.document.close();
-      popup?.print();
+  print(result: SaleInvoiceDetailDto, mode: 'a4' | '80' | '58' = this.selectedPrintFormat()): void {
+    this.billing.printInvoice(result.invoice.id).subscribe({
+      next: (print) => {
+        const html = mode === 'a4' ? print.a4Html : mode === '80' ? print.thermal80Html : print.thermal58Html;
+        this.printer.printInvoiceHtml(html, `Invoice #${result.invoice.invoiceNumber}`, mode);
+      },
+      error: () => {
+        const fallbackHtml = this.buildOfflineInvoiceHtml(result.invoice.grandTotal, mode, result.invoice.invoiceNumber);
+        this.printer.printInvoiceHtml(fallbackHtml, `Invoice #${result.invoice.invoiceNumber}`, mode);
+      }
     });
+  }
+
+  private buildOfflineInvoiceHtml(total: number, mode: '80' | 'a4' | '58', invoiceNumber?: string): string {
+    const invNo = invoiceNumber || `BILL-${Date.now().toString().slice(-6)}`;
+    const dateStr = new Date().toLocaleString('en-IN');
+    const rows = this.lines().map(l =>
+      `<tr><td>${l.product.name}</td><td style="text-align:center;">${l.quantity}</td><td style="text-align:right;">₹${l.unitPrice.toFixed(2)}</td><td style="text-align:right;">₹${(l.quantity * l.unitPrice).toFixed(2)}</td></tr>`
+    ).join('');
+    const isA4 = mode === 'a4';
+    return `
+      <div style="font-family: Arial, sans-serif; padding: ${isA4 ? '24px' : '8px'}; max-width: ${isA4 ? '700px' : '290px'}; margin: auto;">
+        <div style="text-align: center; border-bottom: 2px dashed #bbb; padding-bottom: 10px; margin-bottom: 10px;">
+          <h2 style="margin: 0; color: #0f766e;">BillEase Pro Store</h2>
+          <p style="margin: 2px 0; font-size: 12px; color: #555;">Retail Counter #1 · Cashier: ${this.cashierName()}</p>
+          <h3 style="margin: 6px 0 2px; font-size: ${isA4 ? '16px' : '13px'};">TAX INVOICE (${mode === 'a4' ? 'A4' : '80mm'})</h3>
+          <p style="margin: 2px 0; font-size: 12px;">Invoice: <strong>#${invNo}</strong></p>
+          <p style="margin: 2px 0; font-size: 11px; color: #666;">Date: ${dateStr}</p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 10px;">
+          <thead>
+            <tr style="border-bottom: 1px solid #333;">
+              <th style="text-align:left; padding: 4px;">Item</th>
+              <th style="text-align:center; padding: 4px;">Qty</th>
+              <th style="text-align:right; padding: 4px;">Rate</th>
+              <th style="text-align:right; padding: 4px;">Total</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+        <div style="border-top: 1px dashed #999; padding-top: 6px; font-size: 12px;">
+          <div style="display:flex; justify-content:space-between; margin: 3px 0;"><span>Subtotal:</span><span>₹${this.localSubtotal().toFixed(2)}</span></div>
+          ${this.billDiscountValue > 0 ? `<div style="display:flex; justify-content:space-between; margin: 3px 0; color: #059669; font-weight:600;"><span>Bill Discount:</span><span>- ₹${this.billDiscountValue.toFixed(2)}</span></div>` : ''}
+          <div style="display:flex; justify-content:space-between; font-size: 16px; font-weight: 800; border-top: 1px solid #333; padding-top: 6px; margin-top: 6px; color: #0f766e;">
+            <span>Grand Total:</span><span>₹${total.toFixed(2)}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top: 4px; font-size: 11px; color: #555;">
+            <span>Payment Mode:</span><span>${this.paymentMode}</span>
+          </div>
+        </div>
+        <div style="text-align: center; margin-top: 14px; font-size: 11px; color: #777; border-top: 1px dashed #bbb; padding-top: 8px;">
+          <p style="margin: 0;">Thank you for shopping with us!</p>
+        </div>
+      </div>
+    `;
   }
 
   cancel(): void {
