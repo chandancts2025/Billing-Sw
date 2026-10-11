@@ -3,6 +3,8 @@ import { authGuard, roleGuard } from './core/guards/auth.guard';
 import { settingsUnsavedGuard } from './features/settings/settings-unsaved.guard';
 
 export const routes: Routes = [
+  { path: 'landing', loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent) },
+  { path: 'home', redirectTo: 'landing' },
   { path: 'login', redirectTo: 'auth/login' },
   {
     path: 'auth',

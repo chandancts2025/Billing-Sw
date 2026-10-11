@@ -82,7 +82,11 @@ import { AuthResponse } from '../../core/auth/auth.models';
             <button mat-flat-button color="primary" type="submit" [disabled]="loading()">Verify</button>
           }
         </div>
-        <a routerLink="/auth/login">Back to sign in</a>
+        <div class="footer-links">
+          <a routerLink="/auth/login">Back to sign in</a>
+          <span class="sep">·</span>
+          <a routerLink="/landing">Back to Landing Page</a>
+        </div>
       </form>
     </main>
   `,
@@ -94,6 +98,10 @@ import { AuthResponse } from '../../core/auth/auth.models';
     .actions { display: flex; justify-content: flex-end; gap: 10px; }
     .hint { color: #5d6978; }
     .error { color: #b42318; font-size: 13px; }
+    .footer-links { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; font-weight: 500; margin-top: 6px; }
+    .footer-links a { color: #0f766e; text-decoration: none; }
+    .footer-links a:hover { text-decoration: underline; }
+    .footer-links .sep { color: #94a3b8; }
     @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
   `]
 })

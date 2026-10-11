@@ -91,7 +91,7 @@ export class AuthService {
       this.http.post(`${environment.apiBaseUrl}/auth/logout`, { userId }, { withCredentials: true }).subscribe({ error: () => undefined });
     }
     this.clearSession();
-    if (navigate) void this.router.navigateByUrl('/auth/login');
+    if (navigate) void this.router.navigateByUrl('/landing');
   }
 
   isTokenValid(): boolean {

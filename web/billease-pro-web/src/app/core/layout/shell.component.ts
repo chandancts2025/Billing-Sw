@@ -18,7 +18,7 @@ import { TopbarComponent } from '../../shared/layout/topbar.component';
   imports: [RouterOutlet, MatButtonModule, MatIconModule, MatProgressBarModule, BreadcrumbComponent, SidebarComponent, TopbarComponent],
   template: `
     <div class="shell" [class.sidebar-collapsed]="collapsed()" [class.mobile-nav-open]="mobileMenuOpen()">
-      <be-sidebar [items]="visibleNav()" [collapsed]="collapsed()" (toggle)="toggleSidebar()" (close)="mobileMenuOpen.set(false)" />
+      <be-sidebar [items]="visibleNav()" [collapsed]="collapsed()" (toggle)="toggleSidebar()" (close)="mobileMenuOpen.set(false)" (logout)="auth.logout()" />
       @if (mobileMenuOpen()) {
         <div class="mobile-sidebar-backdrop" (click)="mobileMenuOpen.set(false)"></div>
       }
@@ -114,7 +114,8 @@ export class ShellComponent {
     { label: 'Suppliers', icon: 'local_shipping', link: '/purchase/suppliers', minRole: 'Admin' },
     { label: 'Customers', icon: 'groups', link: '/customers', minRole: 'Operator' },
     { label: 'Reports', icon: 'analytics', link: '/reports/analytics', minRole: 'Operator' },
-    { label: 'Settings', icon: 'settings', link: '/settings/shop', minRole: 'Admin' }
+    { label: 'Settings', icon: 'settings', link: '/settings/shop', minRole: 'Admin' },
+    { label: 'Landing Page', icon: 'public', link: '/landing', minRole: 'Operator' }
   ];
   readonly visibleNav = computed(() => this.navItems.filter(item => this.canSee(item.minRole)));
 

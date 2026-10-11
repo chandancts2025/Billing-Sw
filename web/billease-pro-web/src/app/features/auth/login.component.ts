@@ -17,6 +17,12 @@ import { AuthService } from '../../core/auth/auth.service';
     <main class="auth-page">
       <form [formGroup]="form" (ngSubmit)="submit()" autocomplete="off">
         <header>
+          <div class="top-nav-row">
+            <a routerLink="/landing" class="back-landing-link" title="Return to Landing Page">
+              <mat-icon>arrow_back</mat-icon>
+              <span>Back to Landing Page</span>
+            </a>
+          </div>
           <h1>BillEase Pro</h1>
           <p>Sign in to continue</p>
         </header>
@@ -70,6 +76,10 @@ import { AuthService } from '../../core/auth/auth.service';
     .auth-page { min-height: 100vh; display: grid; place-items: center; background: #eef2f6; padding: 20px; }
     form { width: min(100%, 420px); display: grid; gap: 12px; background: white; border: 1px solid #dfe5ec; border-radius: 8px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
     header { display: grid; gap: 4px; }
+    .top-nav-row { display: flex; align-items: center; margin-bottom: 4px; }
+    .back-landing-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #0f766e; text-decoration: none; padding: 5px 10px; border-radius: 6px; background: #f0fdfa; border: 1px solid #ccfbf1; transition: all 0.2s; }
+    .back-landing-link:hover { background: #ccfbf1; color: #115e59; }
+    .back-landing-link mat-icon { font-size: 16px; width: 16px; height: 16px; }
     h1 { margin: 0; font-size: 28px; color: #0f766e; }
     p { margin: 0; color: #5d6978; }
     .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }

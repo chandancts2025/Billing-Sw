@@ -75,3 +75,92 @@ textarea {
 .dark-mode body {
   background: var(--page-bg);
 }
+
+/* ==========================================================================
+   GLOBAL FORM FIELDS: PURE WHITE BACKGROUND, CRISP CONTRAST, CONSISTENT UX
+   ========================================================================== */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="color"]),
+select,
+textarea,
+.mat-mdc-form-field input,
+.mat-mdc-form-field textarea,
+.mat-mdc-text-field-wrapper,
+.mdc-text-field,
+.mdc-text-field--filled,
+.mdc-text-field--outlined {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Ensure placeholder and dropdown options are high contrast and fully readable */
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+}
+
+select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Angular Material form field overrides */
+.mat-mdc-form-field input,
+.mat-mdc-form-field textarea {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.mat-mdc-form-field-flex {
+  background-color: #ffffff !important;
+  border-radius: 8px !important;
+}
+
+.mat-mdc-text-field-wrapper .mat-mdc-form-field-input-control {
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+.mat-mdc-select-value,
+.mat-mdc-select-arrow {
+  color: #0f172a !important;
+}
+
+.mat-mdc-option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.mat-mdc-option:hover,
+.mat-mdc-option.mdc-list-item--selected {
+  background-color: #f0fdfa !important;
+  color: #0f766e !important;
+}
+
+/* Consistent clean borders & focus ring */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="color"]),
+select,
+textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="color"]):focus,
+select:focus,
+textarea:focus {
+  border-color: var(--brand-color, #0f766e) !important;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.15) !important;
+  outline: none !important;
+}
+
+/* WebKit autofill override so yellow/black browser autofill doesn't darken the textbox */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
+}

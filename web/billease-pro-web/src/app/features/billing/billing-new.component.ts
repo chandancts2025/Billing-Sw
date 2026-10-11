@@ -1424,7 +1424,7 @@ interface BillLine {
       position: relative;
       display: flex;
       align-items: center;
-      background: #ffffff;
+      background: #ffffff !important;
       border: 2px solid var(--border-subtle);
       border-radius: 12px;
       padding: 0 12px;
@@ -1449,8 +1449,8 @@ interface BillLine {
       outline: 0;
       font-size: 14px;
       font-weight: 500;
-      color: #0f172a;
-      background: transparent;
+      color: #0f172a !important;
+      background: #ffffff !important;
     }
     .main-search-input::placeholder {
       color: #94a3b8;

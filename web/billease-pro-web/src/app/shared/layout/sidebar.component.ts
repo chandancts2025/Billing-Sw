@@ -17,10 +17,10 @@ export interface SidebarItem {
   template: `
     <aside [class.collapsed]="collapsed()">
       <div class="brand">
-        <div class="brand-title-wrap">
+        <a routerLink="/landing" class="brand-title-wrap" (click)="onItemClick()" title="View Landing Page">
           <span class="brand-mark">B</span>
           <span class="brand-text">BillEase Pro</span>
-        </div>
+        </a>
         <button type="button" class="mobile-close-btn" (click)="close.emit()" aria-label="Close sidebar">
           <mat-icon>close</mat-icon>
         </button>
@@ -35,10 +35,22 @@ export interface SidebarItem {
         }
       </nav>
 
-      <button type="button" class="collapse-toggle-btn" (click)="toggle.emit()">
-        <mat-icon>{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
-        <span>Collapse Sidebar</span>
-      </button>
+      <div class="sidebar-footer">
+        <a routerLink="/landing" class="sidebar-footer-link" title="Landing Page" (click)="onItemClick()">
+          <mat-icon>public</mat-icon>
+          <span>Landing Page</span>
+        </a>
+
+        <button type="button" class="sidebar-logout-btn" (click)="onLogoutClick()" title="Sign Out of BillEase Pro">
+          <mat-icon>logout</mat-icon>
+          <span>Sign Out</span>
+        </button>
+
+        <button type="button" class="collapse-toggle-btn" (click)="toggle.emit()">
+          <mat-icon>{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+          <span>Collapse Sidebar</span>
+        </button>
+      </div>
     </aside>
   `,
   styles: [`
@@ -128,6 +140,69 @@ export interface SidebarItem {
       background: #263241;
       color: white;
     }
+    .sidebar-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-top: 10px;
+      border-top: 1px solid #263241;
+      margin-top: auto;
+    }
+    .sidebar-footer-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #94a3b8;
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      min-height: 40px;
+    }
+    .sidebar-footer-link:hover {
+      background: #1e293b;
+      color: #38bdf8;
+    }
+    .sidebar-footer-link mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+    .sidebar-logout-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #fca5a5;
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      text-decoration: none;
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+      min-height: 40px;
+    }
+    .sidebar-logout-btn:hover {
+      background: rgba(239, 68, 68, 0.25);
+      color: #ffffff;
+      border-color: #ef4444;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+    .sidebar-logout-btn mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+    .brand-title-wrap {
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+    }
     .collapsed {
       width: 72px;
       padding: 16px 8px;
@@ -137,7 +212,9 @@ export interface SidebarItem {
       display: none;
     }
     .collapsed a,
-    .collapsed .collapse-toggle-btn {
+    .collapsed .collapse-toggle-btn,
+    .collapsed .sidebar-footer-link,
+    .collapsed .sidebar-logout-btn {
       justify-content: center;
       padding: 10px;
     }
@@ -156,10 +233,16 @@ export class SidebarComponent {
   readonly collapsed = input(false);
   readonly toggle = output<void>();
   readonly close = output<void>();
+  readonly logout = output<void>();
 
   onItemClick(): void {
     if (typeof window !== 'undefined' && window.innerWidth <= 860) {
       this.close.emit();
     }
+  }
+
+  onLogoutClick(): void {
+    this.close.emit();
+    this.logout.emit();
   }
 }
