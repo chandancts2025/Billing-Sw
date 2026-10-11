@@ -186,15 +186,15 @@ public sealed class BillEaseDbContext : DbContext, IUnitOfWork
             Name = "BillEase Demo Store",
             LegalName = "BillEase Demo Store Pvt Ltd",
             TaxRegistrationNumber = "29ABCDE1234F1Z5",
-            AddressLine1 = "Main Market Road",
-            City = "Bengaluru",
-            State = "Karnataka",
-            PostalCode = "560001",
-            Phone = "+91-9000000000",
-            Email = "demo@billeasepro.local"
+            AddressLine1 = "3B8-2D, Sanhita Township, Newtown",
+            City = "Kolkata",
+            State = "West Bengal",
+            PostalCode = "700135",
+            Phone = "+91-9851632391",
+            Email = "chandankr.mandal87@gmail.com"
         });
         modelBuilder.Entity<AppUser>().HasData(
-            SeedUser("50000000-0000-0000-0000-000000000001", shopId, "Super Admin", "superadmin@billeasepro.local", UserRole.SuperAdmin),
+            SeedUser("50000000-0000-0000-0000-000000000001", shopId, "Chandan Kr Mandal", "chandankr.mandal87@gmail.com", UserRole.SuperAdmin),
             SeedUser("50000000-0000-0000-0000-000000000002", shopId, "Admin User", "admin@billeasepro.local", UserRole.Admin),
             SeedUser("50000000-0000-0000-0000-000000000003", shopId, "Operator User", "operator@billeasepro.local", UserRole.Operator));
         modelBuilder.Entity<UnitOfMeasure>().HasData(

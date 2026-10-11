@@ -53,19 +53,33 @@ import { AuthService } from '../../core/auth/auth.service';
           Sign in
         </button>
         <a class="secondary" routerLink="/auth/register">Create an account</a>
+
+        <div class="owner-badge">
+          <div class="owner-badge-title">
+            <mat-icon>verified</mat-icon>
+            <span>Product Owner</span>
+          </div>
+          <strong>Chandan Kr Mandal</strong>
+          <small>📞 +91 9851632391 · ✉️ chandankr.mandal87@gmail.com</small>
+          <small>📍 3B8-2D, Sanhita Township, Newtown, 700135, WB</small>
+        </div>
       </form>
     </main>
   `,
   styles: [`
     .auth-page { min-height: 100vh; display: grid; place-items: center; background: #eef2f6; padding: 20px; }
-    form { width: min(100%, 420px); display: grid; gap: 12px; background: white; border: 1px solid #dfe5ec; border-radius: 8px; padding: 24px; }
+    form { width: min(100%, 420px); display: grid; gap: 12px; background: white; border: 1px solid #dfe5ec; border-radius: 8px; padding: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
     header { display: grid; gap: 4px; }
-    h1 { margin: 0; font-size: 28px; }
+    h1 { margin: 0; font-size: 28px; color: #0f766e; }
     p { margin: 0; color: #5d6978; }
     .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
     button[type='submit'] { height: 44px; }
     .secondary { text-align: center; font-weight: 600; }
     .error { color: #b42318; font-size: 13px; }
+    .owner-badge { border-top: 1px dashed #cbd5e1; padding-top: 12px; margin-top: 4px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: #475569; }
+    .owner-badge-title { display: flex; align-items: center; gap: 4px; color: #0f766e; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .owner-badge-title mat-icon { font-size: 14px; width: 14px; height: 14px; }
+    .owner-badge strong { color: #0f172a; font-size: 13px; }
   `]
 })
 export class LoginComponent {

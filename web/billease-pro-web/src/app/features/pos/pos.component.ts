@@ -85,7 +85,7 @@ interface CartLine extends PosProduct {
       <article id="print-bill" class="print-bill" [class.thermal-58]="printMode() === 'thermal-58'" [class.thermal-80]="printMode() === 'thermal-80'">
         <header>
           <h2>BillEase Demo Store</h2>
-          <p>Main Market Road, Bengaluru</p>
+          <p>3B8-2D, Sanhita Township, Newtown, 700135, WB · Tel: 9851632391</p>
           <p>GSTIN 29ABCDE1234F1Z5</p>
         </header>
         <table>
@@ -99,7 +99,7 @@ interface CartLine extends PosProduct {
         <footer>
           <div><span>Tax</span><strong>₹{{ taxTotal() }}</strong></div>
           <div><span>Total</span><strong>₹{{ grandTotal() }}</strong></div>
-          <p>Thank you for shopping with us.</p>
+          <p>Thank you for shopping with us! · Owner: Chandan Kr Mandal (9851632391)</p>
         </footer>
       </article>
     </section>

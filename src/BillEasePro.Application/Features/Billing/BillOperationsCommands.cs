@@ -562,8 +562,8 @@ public sealed class GetPrintInvoiceQueryHandler : IRequestHandler<GetPrintInvoic
         </style></head><body>
         <div class="header">
           <h1>{{WebUtility.HtmlEncode(invoice.Shop?.Name ?? "BillEase Pro")}}</h1>
-          <p>{{WebUtility.HtmlEncode(invoice.Shop?.AddressLine1 ?? "")}}{{(string.IsNullOrWhiteSpace(invoice.Shop?.City) ? "" : $", {WebUtility.HtmlEncode(invoice.Shop.City)}")}}</p>
-          {{(string.IsNullOrWhiteSpace(invoice.Shop?.Phone) ? "" : $"<p>Tel: {WebUtility.HtmlEncode(invoice.Shop.Phone)}</p>")}}
+          <p>{{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(invoice.Shop?.AddressLine1) ? "3B8-2D, Sanhita Township, Newtown" : invoice.Shop.AddressLine1)}}{{(string.IsNullOrWhiteSpace(invoice.Shop?.City) ? ", Newtown, 700135, WB" : $", {WebUtility.HtmlEncode(invoice.Shop.City)}")}}{{(string.IsNullOrWhiteSpace(invoice.Shop?.PostalCode) ? "" : $" - {invoice.Shop.PostalCode}")}}</p>
+          <p>Tel: {{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(invoice.Shop?.Phone) ? "9851632391" : invoice.Shop.Phone)}} · Email: {{WebUtility.HtmlEncode(string.IsNullOrWhiteSpace(invoice.Shop?.Email) ? "chandankr.mandal87@gmail.com" : invoice.Shop.Email)}}</p>
           {{(string.IsNullOrWhiteSpace(invoice.Shop?.TaxRegistrationNumber) ? "" : $"<p><strong>GSTIN: {WebUtility.HtmlEncode(invoice.Shop.TaxRegistrationNumber)}</strong></p>")}}
           <h3 style="margin: 6px 0 2px; font-size: {{(compact ? "12px" : "16px")}};">TAX INVOICE</h3>
         </div>
@@ -613,7 +613,7 @@ public sealed class GetPrintInvoiceQueryHandler : IRequestHandler<GetPrintInvoic
 
         <div class="footer">
           <p>Thank you for your visit! Goods once sold subject to store return policy.</p>
-          <p>Software Powered by <strong>BillEase Pro</strong></p>
+          <p>Software Powered by <strong>BillEase Pro</strong> · Product Owner: Chandan Kr Mandal (9851632391)</p>
         </div>
         </body></html>
         """;

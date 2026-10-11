@@ -26,7 +26,7 @@ export class AuthService {
   }
 
   get rememberedEmail(): string {
-    return localStorage.getItem(rememberedEmailKey) ?? '';
+    return localStorage.getItem(rememberedEmailKey) ?? 'chandankr.mandal87@gmail.com';
   }
 
   login(request: LoginRequest) {

@@ -3383,7 +3383,7 @@ interface BillLine {
         overflow: visible;
       }
       .bill-table-wrapper {
-        min-height: 320px;
+        min-height: 240px;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
       }
@@ -3392,9 +3392,84 @@ interface BillLine {
       }
     }
 
+    /* CARD-BASED CART LAYOUT ON PHONES (<= 680px) - ZERO HORIZONTAL SCROLL */
+    @media (max-width: 680px) {
+      .bill-table-wrapper {
+        min-height: auto;
+        overflow-x: visible !important;
+      }
+      .table-header-row {
+        display: none !important;
+      }
+      .table-body {
+        gap: 8px;
+        padding: 4px;
+      }
+      .table-row-card {
+        min-width: 0 !important;
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: auto 1fr auto !important;
+        grid-template-areas:
+          "prod prod del"
+          "qty  rate total" !important;
+        gap: 8px 10px !important;
+        padding: 12px 14px !important;
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        background: #ffffff !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
+      }
+      .table-row-card .col-item {
+        grid-area: prod;
+        padding-right: 8px;
+      }
+      .table-row-card .col-action {
+        grid-area: del;
+        justify-self: end;
+        align-self: start;
+      }
+      .table-row-card .col-qty {
+        grid-area: qty;
+        justify-self: start;
+      }
+      .table-row-card .col-rate {
+        grid-area: rate;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        justify-self: center;
+        max-width: 105px;
+      }
+      .table-row-card .col-rate::before {
+        content: "@ ₹";
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+      }
+      .table-row-card .col-total {
+        grid-area: total;
+        justify-self: end;
+        text-align: right;
+      }
+      .table-row-card .col-total .line-total-val {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--brand, #0f766e);
+      }
+      .table-row-card .col-unit,
+      .table-row-card .col-mrp,
+      .table-row-card .col-disc,
+      .table-row-card .col-tax {
+        display: none !important;
+      }
+    }
+
     @media (max-width: 860px) {
       .pos-container {
-        padding-bottom: 88px; /* clearance so sticky mobile dock doesn't obscure content */
+        padding-bottom: 96px; /* clearance so sticky mobile dock doesn't obscure content */
       }
       .pos-topbar {
         height: auto;
@@ -3424,7 +3499,9 @@ interface BillLine {
         bottom: 0;
         left: 0;
         right: 0;
-        background: #ffffff;
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         border-top: 1px solid #cbd5e1;
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
         padding: 10px 14px;
@@ -3466,7 +3543,7 @@ interface BillLine {
         font-weight: 700;
         cursor: pointer;
         border: 0;
-        min-height: 42px;
+        min-height: 44px;
         transition: transform 0.1s ease, filter 0.15s ease;
       }
       .btn-m-pay {
@@ -3546,7 +3623,7 @@ interface BillLine {
         padding: 8px 10px;
       }
       .main-search-input {
-        font-size: 14px;
+        font-size: 16px; /* Prevents auto-zoom in iOS Safari */
       }
       .search-kbd-hint {
         display: none;
@@ -3558,19 +3635,45 @@ interface BillLine {
         padding: 6px;
       }
       .payment-tabs-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+        gap: 6px;
+      }
+      .pay-tab {
+        padding: 8px 4px;
+        min-height: 48px;
       }
       .cash-chips-row {
         flex-wrap: wrap;
       }
       .cash-chip {
         padding: 6px 10px;
+        min-height: 32px;
       }
       .btn-m-pay span, .btn-m-confirm span {
         font-size: 12px;
       }
       .btn-m-pay, .btn-m-confirm {
-        padding: 8px 10px;
+        padding: 8px 12px;
+      }
+    }
+
+    @media (max-width: 500px) {
+      .discount-inputs-row {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+      .disc-pair, .coupon-pair {
+        height: 38px !important;
+      }
+      .disc-pair select, .bill-disc-select {
+        min-width: 105px !important;
+        font-size: 13px !important;
+      }
+      .disc-pair input, .bill-disc-val-input {
+        font-size: 14px !important;
+      }
+      .pfmt-modal-options {
+        grid-template-columns: 1fr !important;
       }
     }
   `]
@@ -3596,7 +3699,7 @@ export class BillingNewComponent implements OnInit {
 
   readonly demoShopId = '10000000-0000-0000-0000-000000000001';
   readonly shopId = computed(() => this.auth.user()?.shopId ?? this.demoShopId);
-  readonly cashierName = computed(() => this.auth.user()?.fullName || 'Chandan Mandal');
+  readonly cashierName = computed(() => this.auth.user()?.fullName || 'Chandan Kr Mandal');
 
   readonly lines = signal<BillLine[]>([]);
   readonly productMatches = signal<ProductSearchResultDto[]>([]);
@@ -4354,6 +4457,8 @@ export class BillingNewComponent implements OnInit {
       <div style="font-family: Arial, sans-serif; padding: ${isA4 ? '24px' : '8px'}; max-width: ${isA4 ? '700px' : '290px'}; margin: auto;">
         <div style="text-align: center; border-bottom: 2px dashed #bbb; padding-bottom: 10px; margin-bottom: 10px;">
           <h2 style="margin: 0; color: #0f766e;">BillEase Pro Store</h2>
+          <p style="margin: 2px 0; font-size: 11px; color: #444;">3B8-2D, Sanhita Township, Newtown, 700135, WB · Tel: 9851632391</p>
+          <p style="margin: 1px 0; font-size: 11px; color: #666;">chandankr.mandal87@gmail.com</p>
           <p style="margin: 2px 0; font-size: 12px; color: #555;">Retail Counter #1 · Cashier: ${this.cashierName()}</p>
           <h3 style="margin: 6px 0 2px; font-size: ${isA4 ? '16px' : '13px'};">TAX INVOICE (${mode === 'a4' ? 'A4' : '80mm'})</h3>
           <p style="margin: 2px 0; font-size: 12px;">Invoice: <strong>#${invNo}</strong></p>
@@ -4382,6 +4487,7 @@ export class BillingNewComponent implements OnInit {
         </div>
         <div style="text-align: center; margin-top: 14px; font-size: 11px; color: #777; border-top: 1px dashed #bbb; padding-top: 8px;">
           <p style="margin: 0;">Thank you for shopping with us!</p>
+          <p style="margin: 2px 0 0; font-size: 10px; color: #888;">Product Owner: Chandan Kr Mandal · +91 9851632391</p>
         </div>
       </div>
     `;

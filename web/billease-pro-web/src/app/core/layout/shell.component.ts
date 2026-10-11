@@ -72,6 +72,18 @@ import { TopbarComponent } from '../../shared/layout/topbar.component';
             <div><kbd>F6</kbd><span>Confirm and print</span></div>
             <div><kbd>F7</kbd><span>Confirm bill</span></div>
             <div><kbd>Esc</kbd><span>Cancel or close dialog</span></div>
+            <div class="owner-card">
+              <div class="owner-header">
+                <mat-icon>verified_user</mat-icon>
+                <span>Product Owner</span>
+              </div>
+              <div class="owner-details">
+                <strong>Chandan Kr Mandal</strong>
+                <span>📞 +91 9851632391</span>
+                <span>✉️ chandankr.mandal87@gmail.com</span>
+                <span>📍 3B8-2D, Sanhita Township, Newtown, 700135, WB</span>
+              </div>
+            </div>
           </article>
         </section>
       }

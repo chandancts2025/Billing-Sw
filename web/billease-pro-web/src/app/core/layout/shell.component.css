@@ -123,11 +123,53 @@ main {
   gap: 10px;
 }
 
-.help div {
+.help div:not(.owner-card):not(.owner-header):not(.owner-details) {
   display: grid;
   grid-template-columns: 70px 1fr;
   align-items: center;
   gap: 10px;
+}
+
+.owner-card {
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.owner-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--brand-color, #0f766e);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.owner-header mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.owner-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: #334155;
+  line-height: 1.4;
+}
+
+.owner-details strong {
+  font-size: 13px;
+  color: #0f172a;
 }
 
 kbd {
