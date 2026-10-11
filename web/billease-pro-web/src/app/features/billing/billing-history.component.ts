@@ -151,9 +151,15 @@ import { BillHistoryRowDto, PaymentMethod, PrintInvoiceDto, SalesInvoiceStatus }
       .filters { grid-template-columns: 1fr; gap: 8px; }
       .filters button { width: 100%; height: 44px; }
       .export-bar { width: 100%; }
-      .export-bar button { flex: 1; }
       .table-wrap { -webkit-overflow-scrolling: touch; }
       iframe { height: 420px; }
+    }
+    @media print {
+      .history-page { padding: 0 !important; }
+      .page-head { border-bottom: 2px solid #0f766e !important; padding-bottom: 8px !important; margin-bottom: 12px !important; }
+      .page-head button, .filters, .export-bar, .preview, th:last-child, td.actions { display: none !important; }
+      .table-wrap { overflow: visible !important; border: 1px solid #cbd5e1 !important; }
+      table { width: 100% !important; min-width: 0 !important; }
     }
   `]
 })

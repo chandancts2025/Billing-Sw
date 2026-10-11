@@ -92,11 +92,61 @@ textarea,
   color: #0f172a !important;
 }
 
-/* Ensure placeholder and dropdown options are high contrast and fully readable */
+/* Standard inputs placeholder (e.g., search bars, plain textboxes) */
 input::placeholder,
 textarea::placeholder {
-  color: #94a3b8 !important;
+  color: #94a3b8;
+  opacity: 1;
+}
+
+/* ==========================================================================
+   FIX FOR LABEL & PLACEHOLDER OVERLAPPING IN ANGULAR MATERIAL FORM FIELDS:
+   When an Angular Material text field has a label and is NOT focused and NOT floating,
+   the placeholder MUST be hidden so it never collides or superimposes on the resting label.
+   ========================================================================== */
+.mat-mdc-form-field:not(.mat-focused):not(.mat-form-field-should-float) .mat-mdc-input-element::placeholder,
+.mat-mdc-form-field:not(.mat-focused):not(.mat-form-field-should-float) input::placeholder,
+.mat-mdc-form-field:not(.mat-focused):not(.mat-form-field-should-float) textarea::placeholder,
+.mdc-text-field:not(.mdc-text-field--focused):not(.mdc-text-field--label-floating) .mat-mdc-input-element::placeholder,
+.mdc-text-field:not(.mdc-text-field--focused):not(.mdc-text-field--label-floating) input::placeholder,
+.mdc-text-field:not(.mdc-text-field--focused):not(.mdc-text-field--label-floating) textarea::placeholder {
+  opacity: 0 !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  visibility: hidden !important;
+}
+
+/* When the field IS focused, label is floating, or the field has NO label,
+   display the placeholder text clearly with high contrast */
+.mat-mdc-form-field.mat-focused .mat-mdc-input-element::placeholder,
+.mat-mdc-form-field.mat-form-field-should-float .mat-mdc-input-element::placeholder,
+.mdc-text-field--focused .mat-mdc-input-element::placeholder,
+.mdc-text-field--label-floating .mat-mdc-input-element::placeholder,
+.mdc-text-field--no-label .mat-mdc-input-element::placeholder,
+.mat-mdc-form-field:not(.mat-mdc-form-field-has-label) .mat-mdc-input-element::placeholder,
+.mat-mdc-form-field.mat-focused input::placeholder,
+.mat-mdc-form-field.mat-form-field-should-float input::placeholder,
+.mdc-text-field--focused input::placeholder,
+.mdc-text-field--label-floating input::placeholder,
+.mdc-text-field--no-label input::placeholder,
+.mat-mdc-form-field:not(.mat-mdc-form-field-has-label) input::placeholder,
+.mat-mdc-form-field.mat-focused textarea::placeholder,
+.mat-mdc-form-field.mat-form-field-should-float textarea::placeholder,
+.mdc-text-field--focused textarea::placeholder,
+.mdc-text-field--label-floating textarea::placeholder,
+.mdc-text-field--no-label textarea::placeholder,
+.mat-mdc-form-field:not(.mat-mdc-form-field-has-label) textarea::placeholder {
   opacity: 1 !important;
+  color: #94a3b8 !important;
+  -webkit-text-fill-color: #94a3b8 !important;
+  visibility: visible !important;
+}
+
+/* Floating label styling: clean readable label on notch */
+.mdc-text-field--outlined .mdc-floating-label--float-above {
+  background-color: #ffffff;
+  padding: 0 4px;
+  z-index: 2;
 }
 
 select option {
@@ -163,4 +213,161 @@ select:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
   -webkit-text-fill-color: #0f172a !important;
   caret-color: #0f172a !important;
+}
+
+/* ==========================================================================
+   GLOBAL CONTENT-ONLY PRINT STYLES ACROSS ALL SECTIONS
+   Only the essential report, statement, ledger, and table data should print.
+   All navigation menus, topbars, toolbars, buttons, filters, and overlays are hidden.
+   ========================================================================== */
+@media print {
+  @page {
+    margin: 10mm;
+    size: auto;
+  }
+
+  /* Hide main navigation shell and global UI chrome */
+  be-sidebar,
+  .shell be-sidebar,
+  .mobile-sidebar-backdrop,
+  be-topbar,
+  .shell be-topbar,
+  be-breadcrumb,
+  .content > be-breadcrumb,
+  .offline,
+  .toasts,
+  .notification-panel,
+  .help-backdrop,
+  .help,
+  mat-progress-bar,
+  .mat-mdc-progress-bar {
+    display: none !important;
+  }
+
+  /* Full-width clean container resets */
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    width: 100% !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .shell,
+  .shell.sidebar-collapsed,
+  main,
+  .content,
+  section.content {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: auto !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Hide common menus, sub-navs, buttons, search bars, filter bars, and export actions */
+  .no-print,
+  [data-no-print],
+  nav:not(.allow-print),
+  header nav,
+  .page-head nav,
+  .page-head .head-actions,
+  .head-actions,
+  .actions-block,
+  .quick-shortcuts,
+  .toolbar,
+  .filters,
+  .exports,
+  .export-bar,
+  .modal-actions,
+  .dialog-footer,
+  .search-row,
+  .mode-pills,
+  .range-pills,
+  .shortcut-buttons,
+  .preview-head,
+  button:not(.allow-print),
+  .mat-mdc-button:not(.allow-print),
+  .mat-mdc-unelevated-button:not(.allow-print),
+  .mat-mdc-outlined-button:not(.allow-print),
+  .mat-mdc-icon-button,
+  .mat-mdc-fab,
+  .mat-mdc-mini-fab,
+  a.mat-mdc-button:not(.allow-print),
+  a.mat-mdc-outlined-button:not(.allow-print),
+  a.mat-mdc-unelevated-button:not(.allow-print),
+  a.mat-mdc-raised-button:not(.allow-print),
+  a.mat-mdc-flat-button:not(.allow-print),
+  th.actions,
+  td.actions,
+  th:last-child:has(button),
+  td:last-child:has(button),
+  th:last-child:has(a.mat-mdc-button),
+  td:last-child:has(a.mat-mdc-button) {
+    display: none !important;
+  }
+
+  /* Hide sort arrows in all table headers */
+  th mat-icon {
+    display: none !important;
+  }
+
+  /* Clean tables */
+  .table-wrap {
+    overflow: visible !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  table {
+    width: 100% !important;
+    min-width: 0 !important;
+    border-collapse: collapse !important;
+  }
+
+  th, td {
+    padding: 6px 8px !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    font-size: 10pt !important;
+  }
+
+  th {
+    background-color: #f1f5f9 !important;
+    font-weight: 700 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Clean cards & metric widgets */
+  article,
+  .metric-card,
+  .info-card,
+  .invoices-card,
+  .kpi-card,
+  .stat-card {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    background: #ffffff !important;
+  }
+
+  /* Modals without .print-target should never show in print */
+  .modal-backdrop:not(:has(.print-target)) {
+    display: none !important;
+  }
 }

@@ -145,6 +145,18 @@ import { BillingApiService } from '../../core/services/billing-api.service';
     @media (max-width: 900px) {
       .details-grid { grid-template-columns: 1fr; }
     }
+
+    @media print {
+      .customer-ledger-page { padding: 0 !important; display: block !important; }
+      .page-head { border-bottom: 2px solid #0f766e !important; padding-bottom: 8px !important; margin-bottom: 14px !important; }
+      .head-left a { display: none !important; }
+      .head-actions { display: none !important; }
+      .summary-cards { margin-bottom: 14px !important; }
+      .details-grid { display: grid !important; grid-template-columns: 280px 1fr !important; gap: 14px !important; }
+      th:last-child, td:last-child { display: none !important; }
+      .table-wrap { overflow: visible !important; border: 1px solid #cbd5e1 !important; }
+      table { width: 100% !important; min-width: 0 !important; }
+    }
   `]
 })
 export class CustomerDetailComponent {

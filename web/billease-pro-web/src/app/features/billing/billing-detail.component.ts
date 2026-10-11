@@ -30,7 +30,7 @@ import { PrintInvoiceDto } from './billing.models';
       }
     </section>
   `,
-  styles: [`.detail{display:grid;gap:14px;padding:14px}header{display:flex;justify-content:space-between;align-items:center;gap:12px}header div{display:flex;gap:8px;align-items:center}header div:first-child{display:grid;gap:3px;align-items:start}header strong{font-size:22px}header span{color:#667085}article,pre{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px;overflow:auto}`]
+  styles: [`.detail{display:grid;gap:14px;padding:14px}header{display:flex;justify-content:space-between;align-items:center;gap:12px}header div{display:flex;gap:8px;align-items:center}header div:first-child{display:grid;gap:3px;align-items:start}header strong{font-size:22px}header span{color:#667085}article,pre{background:#fff;border:1px solid #dfe5ec;border-radius:8px;padding:16px;overflow:auto}@media print{.detail{padding:0!important;display:block!important}header{display:none!important}article{border:none!important;padding:0!important;background:transparent!important}}`]
 })
 export class BillingDetailComponent {
   private readonly api = inject(BillingApiService);

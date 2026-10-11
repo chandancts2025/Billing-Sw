@@ -1226,13 +1226,40 @@ interface OperatingModeOption {
     .print-hint { font-size: 12px; color: #64748b; }
 
     @media print {
-      body * { visibility: hidden; }
-      .print-target, .print-target * { visibility: visible; }
-      .print-target { position: absolute; left: 0; top: 0; width: 100%; max-width: 100%; border: none; box-shadow: none; padding: 0; }
-      .labels-preview-wrap { background: transparent; padding: 0; }
-      .labels-container { box-shadow: none; padding: 0; border: none; }
-      .barcode-label-card { border: 1px solid #e2e8f0; page-break-inside: avoid; }
-      .no-print { display: none !important; }
+      :host:has(.print-target) .products-page {
+        display: none !important;
+      }
+      :host:has(.print-target) .modal-backdrop {
+        background: transparent !important;
+        position: static !important;
+        display: block !important;
+        padding: 0 !important;
+      }
+      .print-target {
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+      }
+      .labels-preview-wrap { background: transparent !important; padding: 0 !important; }
+      .labels-container { box-shadow: none !important; padding: 0 !important; border: none !important; }
+      .barcode-label-card { border: 1px solid #e2e8f0 !important; page-break-inside: avoid !important; }
+
+      .products-page { padding: 0 !important; }
+      .head-actions, .mode-pills, .search-card, .product-form, .dialog-footer, .no-print, th.actions, td.actions {
+        display: none !important;
+      }
+      .content {
+        display: block !important;
+        grid-template-columns: none !important;
+      }
+      .list-card {
+        max-height: none !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
     }
 
     @media (max-width: 1100px) {

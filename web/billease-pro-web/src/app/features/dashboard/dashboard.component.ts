@@ -307,9 +307,17 @@ import { ReportChartComponent } from '../reports/report-chart.component';
       .range-pills { width: 100%; overflow-x: auto; }
       .quick-bill-btn { width: 100%; justify-content: center; }
       .quick-shortcuts .shortcut-buttons { width: 100%; }
-      .shortcut-buttons a { flex: 1 1 calc(50% - 6px); justify-content: center; font-size: 11px; }
       .heatmap-panel { overflow-x: auto; }
       .heatmap-strip { min-width: 460px; }
+    }
+
+    @media print {
+      .dashboard-container { padding: 0 !important; background: transparent !important; }
+      .dash-head { border-bottom: 2px solid #0f766e !important; padding-bottom: 8px !important; margin-bottom: 12px !important; }
+      .actions-block, .quick-shortcuts { display: none !important; }
+      .kpi-grid { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 10px !important; margin-bottom: 12px !important; page-break-inside: avoid !important; }
+      .charts-grid { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; margin-bottom: 12px !important; page-break-inside: avoid !important; }
+      .kpi-card, .chart-card, .heatmap-panel, .recent-panel { box-shadow: none !important; border: 1px solid #cbd5e1 !important; page-break-inside: avoid !important; }
     }
   `]
 })

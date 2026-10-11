@@ -211,6 +211,16 @@ export interface CustomerRow {
     .modal-card header strong { font-size: 18px; color: #101828; }
     .form-grid { display: grid; gap: 8px; }
     .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+
+    @media print {
+      .customers-page { padding: 0 !important; }
+      .page-head { border-bottom: 2px solid #0f766e !important; padding-bottom: 8px !important; margin-bottom: 12px !important; }
+      .head-actions, .toolbar, .modal-backdrop, th:last-child, td:last-child, .action-cell { display: none !important; }
+      .stats-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 10px !important; margin-bottom: 12px !important; page-break-inside: avoid !important; }
+      .stat-card { border: 1px solid #cbd5e1 !important; box-shadow: none !important; }
+      .table-wrap { overflow: visible !important; border: 1px solid #cbd5e1 !important; }
+      table { width: 100% !important; min-width: 0 !important; }
+    }
   `]
 })
 export class CustomersComponent {

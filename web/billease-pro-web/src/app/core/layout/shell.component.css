@@ -240,3 +240,34 @@ kbd {
   to { opacity: 1; }
 }
 
+@media print {
+  .shell,
+  .shell.sidebar-collapsed {
+    display: block !important;
+    width: 100% !important;
+    min-height: auto !important;
+    background: #ffffff !important;
+  }
+
+  be-sidebar,
+  .mobile-sidebar-backdrop,
+  be-topbar,
+  .offline,
+  .toasts,
+  .notification-panel,
+  .help-backdrop,
+  mat-progress-bar,
+  .content > be-breadcrumb {
+    display: none !important;
+  }
+
+  main,
+  .content {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    animation: none !important;
+  }
+}
+

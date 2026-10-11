@@ -670,10 +670,28 @@ interface ReturnLineDraft extends PurchaseReturnLineRequest {
     }
 
     @media print {
-      body * { visibility: hidden; }
-      .print-target, .print-target * { visibility: visible; }
-      .print-target { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; padding: 0; }
-      .no-print { display: none !important; }
+      :host:has(.print-target) .returns-page {
+        display: none !important;
+      }
+      :host:has(.print-target) .modal-backdrop {
+        background: transparent !important;
+        position: static !important;
+        display: block !important;
+        padding: 0 !important;
+      }
+      .print-target {
+        position: static !important;
+        width: 100% !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+      }
+      .page-head-actions, .filter-input, .return-form-card, .no-print, th.actions, td.actions {
+        display: none !important;
+      }
+      .returns-page {
+        padding: 0 !important;
+      }
     }
   `]
 })

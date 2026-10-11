@@ -291,6 +291,16 @@ import { InventoryService } from './inventory.service';
     }
 
     @media (max-width: 980px) { .kpis, .grid { grid-template-columns: 1fr; } }
+
+    @media print {
+      .inventory-page { padding: 0 !important; }
+      .page-head { border-bottom: 2px solid #0f766e !important; padding-bottom: 8px !important; margin-bottom: 12px !important; }
+      .page-head nav, .reorder-btn, .modal-backdrop { display: none !important; }
+      .kpis { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 10px !important; margin-bottom: 12px !important; page-break-inside: avoid !important; }
+      .kpis article { border: 1px solid #cbd5e1 !important; box-shadow: none !important; }
+      .grid { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; page-break-inside: avoid !important; }
+      .panel { border: 1px solid #cbd5e1 !important; box-shadow: none !important; }
+    }
   `]
 })
 export class InventoryComponent {
