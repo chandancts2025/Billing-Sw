@@ -28,4 +28,13 @@ export class SettingsApiService extends ApiService {
   createDiscount(payload: unknown) { return this.http.post(this.url('discounttypes'), payload); }
   updateDiscount(id: string, payload: unknown) { return this.http.put(this.url(`discounttypes/${id}`), payload); }
   deleteDiscount(id: string) { return this.http.delete(this.url(`discounttypes/${id}`)); }
+
+  testEmail(email?: string) {
+    const params = email ? { email } : undefined;
+    return this.http.post<{ success: boolean; message: string; recipient: string }>(this.url('settings/test-email'), null, { params });
+  }
+
+  smtpStatus() {
+    return this.http.get<{ configured: boolean; host: string; port: string; fromEmail: string; fromName: string; devMode: string }>(this.url('settings/smtp-status'));
+  }
 }

@@ -166,15 +166,33 @@ public sealed class TotpService : ITotpService
     }
 }
 
-public sealed class LoggingOtpDeliveryService : IOtpDeliveryService
+public sealed class EmailOtpDeliveryService : IOtpDeliveryService
 {
-    private readonly ILogger<LoggingOtpDeliveryService> _logger;
+    private readonly IEmailService _emailService;
+    private readonly ILogger<EmailOtpDeliveryService> _logger;
 
-    public LoggingOtpDeliveryService(ILogger<LoggingOtpDeliveryService> logger) => _logger = logger;
-
-    public Task SendAsync(string destination, string code, string purpose, CancellationToken cancellationToken)
+    public EmailOtpDeliveryService(IEmailService emailService, ILogger<EmailOtpDeliveryService> logger)
     {
-        _logger.LogInformation("OTP for {Purpose} to {Destination}: {Code}", purpose, destination, code);
-        return Task.CompletedTask;
+        _emailService = emailService;
+        _logger = logger;
+    }
+
+    public async Task SendAsync(string destination, string code, string purpose, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Delivering OTP for {Purpose} to {Destination}: {Code}", purpose, destination, code);
+
+        if (!string.IsNullOrWhiteSpace(destination) && destination.Contains('@'))
+        {
+            try
+            {
+                await _emailService.SendOtpEmailAsync(destination.Trim(), code, purpose, cancellationToken);
+                _logger.LogInformation("Successfully dispatched OTP email for {Purpose} to {Destination}", purpose, destination);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to deliver OTP email for {Purpose} to {Destination}. (Fallback code: {Code})", purpose, destination, code);
+            }
+        }
     }
 }
+

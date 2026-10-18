@@ -108,9 +108,7 @@ import { BillHistoryRowDto, PaymentMethod, PrintInvoiceDto, SalesInvoiceStatus }
                 <button type="button" class="btn-fmt-pill" [class.active]="previewFormat() === 'a4'" (click)="previewFormat.set('a4')">A4</button>
               </div>
               <button mat-icon-button type="button" title="Print this bill" (click)="printCurrentPreview()"><mat-icon>print</mat-icon></button>
-              @if (selectedPrint()!.customerEmail) {
-                <button mat-icon-button type="button" title="Email" (click)="emailBill(selectedPrint()!)"><mat-icon>mail</mat-icon></button>
-              }
+              <button mat-icon-button type="button" title="Email invoice" (click)="emailBill(selectedPrint()!)"><mat-icon>mail</mat-icon></button>
               <button mat-icon-button type="button" title="WhatsApp" (click)="shareWhatsApp(selectedPrint()!)"><mat-icon>chat</mat-icon></button>
               <button mat-icon-button type="button" title="Close" (click)="selectedPrint.set(null)"><mat-icon>close</mat-icon></button>
             </div>
@@ -174,6 +172,7 @@ export class BillingHistoryComponent {
   readonly shopId = computed(() => this.auth.user()?.shopId ?? this.demoShopId);
   readonly rows = signal<BillHistoryRowDto[]>([]);
   readonly selectedPrint = signal<PrintInvoiceDto | null>(null);
+  readonly selectedRowId = signal<string>('');
   readonly previewFormat = signal<'80' | 'a4'>(this.shopStore.receiptFormat() || '80');
   readonly filter: { from: string; to: string; paymentMode: PaymentMethod | ''; status: SalesInvoiceStatus | ''; search: string } = {
     from: '',
@@ -192,6 +191,7 @@ export class BillingHistoryComponent {
   }
 
   view(row: BillHistoryRowDto): void {
+    this.selectedRowId.set(row.id);
     this.billing.printInvoice(row.id).subscribe(print => this.selectedPrint.set(print));
   }
 
@@ -233,9 +233,24 @@ export class BillingHistoryComponent {
   }
 
   emailBill(print: PrintInvoiceDto): void {
-    const subject = encodeURIComponent(`Invoice ${print.invoiceNumber}`);
-    const body = encodeURIComponent(`Please find your BillEase Pro invoice ${print.invoiceNumber}.`);
-    window.location.href = `mailto:${print.customerEmail}?subject=${subject}&body=${body}`;
+    const targetEmail = print.customerEmail || prompt('Enter recipient email address:');
+    if (!targetEmail) return;
+
+    const rowId = this.selectedRowId();
+    if (rowId) {
+      this.billing.emailSalesInvoice(rowId, targetEmail).subscribe({
+        next: (res) => alert(res.message || `Invoice ${print.invoiceNumber} emailed to ${targetEmail}!`),
+        error: () => {
+          const subject = encodeURIComponent(`Invoice ${print.invoiceNumber}`);
+          const body = encodeURIComponent(`Please find your BillEase Pro invoice ${print.invoiceNumber}.`);
+          window.location.href = `mailto:${targetEmail}?subject=${subject}&body=${body}`;
+        }
+      });
+    } else {
+      const subject = encodeURIComponent(`Invoice ${print.invoiceNumber}`);
+      const body = encodeURIComponent(`Please find your BillEase Pro invoice ${print.invoiceNumber}.`);
+      window.location.href = `mailto:${targetEmail}?subject=${subject}&body=${body}`;
+    }
   }
 
   shareWhatsApp(print: PrintInvoiceDto): void {

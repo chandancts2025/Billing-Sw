@@ -97,4 +97,15 @@ public sealed class BillingController : ControllerBase
     [HttpPost("sales/{salesInvoiceId:guid}/print")]
     public Task<PrintSalesInvoiceResponse> PrintSalesInvoice(Guid salesInvoiceId, CancellationToken cancellationToken)
         => _mediator.Send(new PrintSalesInvoiceCommand(new PrintSalesInvoiceRequest(salesInvoiceId)), cancellationToken);
+
+    [HttpPost("sales/{salesInvoiceId:guid}/email")]
+    public async Task<IActionResult> EmailSalesInvoice(Guid salesInvoiceId, [FromQuery] string? email, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new EmailSalesInvoiceCommand(salesInvoiceId, email), cancellationToken);
+        if (!result)
+        {
+            return BadRequest(new { success = false, message = "Could not email invoice. Ensure the customer has an email address or specify a recipient email." });
+        }
+        return Ok(new { success = true, message = "Invoice email dispatched successfully." });
+    }
 }

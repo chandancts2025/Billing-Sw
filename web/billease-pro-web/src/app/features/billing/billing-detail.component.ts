@@ -21,6 +21,7 @@ import { PrintInvoiceDto } from './billing.models';
           <button mat-stroked-button type="button" (click)="print('a4')"><mat-icon>picture_as_pdf</mat-icon>A4</button>
           <button mat-stroked-button type="button" (click)="print('80')"><mat-icon>receipt</mat-icon>80mm</button>
           <button mat-stroked-button type="button" (click)="print('58')"><mat-icon>receipt_long</mat-icon>58mm</button>
+          <button mat-stroked-button type="button" (click)="emailInvoice()"><mat-icon>mail</mat-icon>Email</button>
         </div>
       </header>
       @if (invoice()) {
@@ -43,6 +44,18 @@ export class BillingDetailComponent {
 
   constructor() {
     if (this.billId) this.api.printBill(this.billId).subscribe(data => this.invoice.set(data));
+  }
+
+  emailInvoice(): void {
+    if (!this.billId) return;
+    const current = this.invoice();
+    const recipient = current?.customerEmail || prompt('Enter recipient email address:');
+    if (!recipient) return;
+
+    this.billing.emailSalesInvoice(this.billId, recipient).subscribe({
+      next: (res) => alert(res.message || `Invoice sent to ${recipient}`),
+      error: (err) => alert(err?.error?.message || 'Failed to send invoice email.')
+    });
   }
 
   alterBill(): void {

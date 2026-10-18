@@ -383,6 +383,26 @@ const storageKey = 'billease.settings.workspace';
                 <label class="wide">WhatsApp API Key<input type="password" [(ngModel)]="draft.general.notifications.whatsappProviderApiKey" (ngModelChange)="touch()" autocomplete="off"></label>
               </div>
             </article>
+            <article id="smtp" class="panel">
+              <div class="section-title">
+                <h2>Email Notifications & SMTP Service</h2>
+                <span class="status">Google Gmail SMTP Configured</span>
+              </div>
+              <p style="color:#64748b; margin:0 0 12px; font-size:13px;">
+                Automated outgoing emails (OTP authentication codes, password resets, and digital customer receipts) use Google Gmail SMTP (<strong>smtp.gmail.com:587</strong>).
+              </p>
+              <div class="form-grid three" style="align-items:center;">
+                <label>Test Recipient Email<input type="email" [(ngModel)]="testRecipientEmail" placeholder="chandankr.mandal87@gmail.com"></label>
+                <button mat-stroked-button color="primary" type="button" [disabled]="testingEmail()" (click)="sendTestEmail()" style="height:38px; margin-top:20px;">
+                  <mat-icon>mark_email_read</mat-icon>{{ testingEmail() ? 'Sending Test...' : 'Send Test Email' }}
+                </button>
+              </div>
+              @if (testEmailResult()) {
+                <p style="margin:8px 0 0; font-size:13px; font-weight:600;" [style.color]="testEmailSuccess() ? '#0f766e' : '#dc2626'">
+                  {{ testEmailResult() }}
+                </p>
+              }
+            </article>
             <article id="loyalty" class="panel">
               <h2>Loyalty Program</h2>
               <div class="form-grid four">
@@ -464,6 +484,27 @@ export class SettingsComponent {
   draft = this.loadDraft();
   couponForm = this.blankCoupon();
   userForm = this.blankUser();
+  testRecipientEmail = 'chandankr.mandal87@gmail.com';
+  readonly testingEmail = signal(false);
+  readonly testEmailResult = signal('');
+  readonly testEmailSuccess = signal(true);
+
+  sendTestEmail(): void {
+    this.testingEmail.set(true);
+    this.testEmailResult.set('Connecting to smtp.gmail.com:587 and transmitting test email...');
+    this.api.testEmail(this.testRecipientEmail).subscribe({
+      next: (res) => {
+        this.testingEmail.set(false);
+        this.testEmailSuccess.set(true);
+        this.testEmailResult.set(res.message || 'Test email successfully sent!');
+      },
+      error: (err) => {
+        this.testingEmail.set(false);
+        this.testEmailSuccess.set(false);
+        this.testEmailResult.set(err?.error?.message || 'SMTP test email failed. Check network or credentials.');
+      }
+    });
+  }
 
   constructor() {
     const shopId = this.auth.user()?.shopId ?? '10000000-0000-0000-0000-000000000001';

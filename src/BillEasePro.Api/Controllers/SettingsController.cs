@@ -19,12 +19,21 @@ public sealed class SettingsController : ControllerBase
     private readonly IRepository<Shop> _shops;
     private readonly IRepository<ShopSetting> _settings;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IEmailService _emailService;
+    private readonly IConfiguration _configuration;
 
-    public SettingsController(IRepository<Shop> shops, IRepository<ShopSetting> settings, IUnitOfWork unitOfWork)
+    public SettingsController(
+        IRepository<Shop> shops,
+        IRepository<ShopSetting> settings,
+        IUnitOfWork unitOfWork,
+        IEmailService emailService,
+        IConfiguration configuration)
     {
         _shops = shops;
         _settings = settings;
         _unitOfWork = unitOfWork;
+        _emailService = emailService;
+        _configuration = configuration;
     }
 
     [HttpGet("shops/{shopId:guid}")]
@@ -164,4 +173,59 @@ public sealed class SettingsController : ControllerBase
             existing.UpdatedAt = DateTimeOffset.UtcNow;
         }
     }
+
+    /// <summary>
+    /// Tests the SMTP email service configuration by dispatching a test email.
+    /// </summary>
+    [HttpPost("test-email")]
+    [AllowAnonymous]
+    public async Task<IActionResult> TestEmail([FromQuery] string? email, CancellationToken cancellationToken)
+    {
+        var targetEmail = string.IsNullOrWhiteSpace(email) ? _configuration["SmtpSettings:FromEmail"] ?? "chandankr.mandal87@gmail.com" : email.Trim();
+        var success = await _emailService.SendTestEmailAsync(targetEmail, cancellationToken);
+        if (success)
+        {
+            return Ok(new
+            {
+                Success = true,
+                Message = $"Test email sent successfully to {targetEmail} via {_configuration["SmtpSettings:Host"]}:{_configuration["SmtpSettings:Port"]}.",
+                Recipient = targetEmail,
+                ServerUtcTime = DateTime.UtcNow
+            });
+        }
+
+        return StatusCode(StatusCodes.Status500InternalServerError, new
+        {
+            Success = false,
+            Message = $"Failed to send test email to {targetEmail}. Check server logs for details.",
+            Recipient = targetEmail
+        });
+    }
+
+    /// <summary>
+    /// Retrieves current SMTP server configuration status.
+    /// </summary>
+    [HttpGet("smtp-status")]
+    [AllowAnonymous]
+    public IActionResult GetSmtpStatus()
+    {
+        var host = _configuration["SmtpSettings:Host"];
+        var port = _configuration["SmtpSettings:Port"];
+        var ssl = _configuration["SmtpSettings:EnableSsl"];
+        var fromEmail = _configuration["SmtpSettings:FromEmail"];
+        var fromName = _configuration["SmtpSettings:FromName"];
+        var devMode = _configuration["SmtpSettings:DevMode"];
+
+        return Ok(new
+        {
+            Configured = !string.IsNullOrWhiteSpace(host) && !string.IsNullOrWhiteSpace(fromEmail),
+            Host = host,
+            Port = port,
+            EnableSsl = ssl,
+            FromEmail = fromEmail,
+            FromName = fromName,
+            DevMode = devMode
+        });
+    }
 }
+

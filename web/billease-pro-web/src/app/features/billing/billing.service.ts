@@ -88,6 +88,12 @@ export class BillingService {
     return this.http.post<PrintSalesInvoiceResponse>(`${this.base}/sales/${id}/print`, null);
   }
 
+  emailSalesInvoice(id: string, email?: string) {
+    let params = new HttpParams();
+    if (email) params = params.set('email', email);
+    return this.http.post<{ success: boolean; message: string }>(`${this.base}/sales/${id}/email`, null, { params });
+  }
+
   confirmSalesInvoice(id: string) {
     return this.http.post<SalesInvoiceDto>(`${this.base}/sales/${id}/confirm`, null);
   }

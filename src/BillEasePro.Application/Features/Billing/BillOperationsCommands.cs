@@ -8,6 +8,7 @@ using BillEasePro.Domain.Entities;
 using BillEasePro.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace BillEasePro.Application.Features.Billing;
 
@@ -26,6 +27,7 @@ public sealed record ConfirmSalesInvoiceCommand(ConfirmSalesInvoiceRequest Reque
 public sealed record CancelSalesInvoiceCommand(CancelSalesInvoiceRequest Request) : IRequest<bool>;
 public sealed record ReturnSalesInvoiceCommand(ReturnSalesInvoiceRequest Request) : IRequest<SalesReturnDto>;
 public sealed record PrintSalesInvoiceCommand(PrintSalesInvoiceRequest Request) : IRequest<PrintSalesInvoiceResponse>;
+public sealed record EmailSalesInvoiceCommand(Guid SalesInvoiceId, string? RecipientEmail = null) : IRequest<bool>;
 
 public sealed class SearchProductsQueryHandler : IRequestHandler<SearchProductsQuery, IReadOnlyList<ProductSearchResultDto>>
 {
@@ -687,6 +689,61 @@ public sealed class PrintSalesInvoiceCommandHandler : IRequestHandler<PrintSales
     {
         var print = await _mediator.Send(new GetPrintInvoiceQuery(request.Request.SalesInvoiceId), cancellationToken);
         return new PrintSalesInvoiceResponse(print.InvoiceNumber, print.A4Html);
+    }
+}
+
+public sealed class EmailSalesInvoiceCommandHandler : IRequestHandler<EmailSalesInvoiceCommand, bool>
+{
+    private readonly IRepository<SalesInvoice> _invoices;
+    private readonly IMediator _mediator;
+    private readonly IEmailService _emailService;
+    private readonly ILogger<EmailSalesInvoiceCommandHandler> _logger;
+
+    public EmailSalesInvoiceCommandHandler(
+        IRepository<SalesInvoice> invoices,
+        IMediator mediator,
+        IEmailService emailService,
+        ILogger<EmailSalesInvoiceCommandHandler> logger)
+    {
+        _invoices = invoices;
+        _mediator = mediator;
+        _emailService = emailService;
+        _logger = logger;
+    }
+
+    public async Task<bool> Handle(EmailSalesInvoiceCommand request, CancellationToken cancellationToken)
+    {
+        var invoice = await _invoices.Query()
+            .Include(x => x.Customer)
+            .Include(x => x.Shop)
+            .FirstOrDefaultAsync(x => x.Id == request.SalesInvoiceId, cancellationToken)
+            ?? throw new KeyNotFoundException("Sales invoice not found.");
+
+        var targetEmail = !string.IsNullOrWhiteSpace(request.RecipientEmail)
+            ? request.RecipientEmail.Trim()
+            : invoice.Customer?.Email?.Trim();
+
+        if (string.IsNullOrWhiteSpace(targetEmail))
+        {
+            _logger.LogWarning("Cannot email invoice {InvoiceNumber}: recipient email not provided and customer has no email on file.", invoice.InvoiceNumber);
+            return false;
+        }
+
+        var print = await _mediator.Send(new GetPrintInvoiceQuery(request.SalesInvoiceId), cancellationToken);
+        var customerName = !string.IsNullOrWhiteSpace(invoice.Customer?.Name) ? invoice.Customer.Name : "Valued Customer";
+        var currency = invoice.Shop?.CurrencyCode ?? "INR";
+
+        await _emailService.SendInvoiceEmailAsync(
+            targetEmail,
+            customerName,
+            invoice.InvoiceNumber,
+            invoice.GrandTotal,
+            currency,
+            print.A4Html,
+            cancellationToken);
+
+        _logger.LogInformation("Successfully emailed invoice {InvoiceNumber} to {TargetEmail}", invoice.InvoiceNumber, targetEmail);
+        return true;
     }
 }
 
